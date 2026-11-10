@@ -1,0 +1,48 @@
+# Maven build outputs
+target/
+*/target/
+**/target/
+
+# Maven local repository (large binary artifacts)
+mvn_repo/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/settings.json
+
+# Bob internal
+.bob/
+
+# migration workspace scratch files
+migration-workspace/
+
+# Large video source files
+*.mov
+*.mp4
+
+# AI agent instruction files
+CLAUDE.md
+
+# Stray auth scratch file
+auth
+
+# Local README preview artifacts
+readme-preview.html
+index.html
+
+# Tutorial video project
+docs/tutorial/remotion/node_modules/
+docs/tutorial/remotion/out/
+
+# User-supplied migration input/output (bring your own v8 export;
+# practice pairs live in v8-to-v9-migration-samples/)
+v8-projects/*/
+!v8-projects/.gitkeep
+v9-projects/*/
+!v9-projects/.gitkeep
+status
