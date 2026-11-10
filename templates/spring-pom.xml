@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Spring Boot target pom.xml template for the BAMOE migrator (target runtime = Spring Boot).
+  Source: SPRING-RULES-FOR-MIGRATOR.md section 2 (tutorial-12-spring). Replace every __TOKEN__.
+
+  Evidence status:
+    Confirmed-by-build  Everything below, as written, with __VERSION_BAMOE__ = 9.4.2-ibm-0002 and
+                        __VERSION_SPRING_BOOT__ = 3.5.0 on JDK 21 (`mvn -o clean package`, offline).
+    Untested            BAMOE 9.5.x. The 9.5.x docs name the Spring BOM com.ibm.bamoe:bamoe-spring-boot-bom;
+                        the tutorial-12 build used com.ibm.bamoe:bamoe-bom (9.4.2); no
+                        bamoe-spring-boot-bom directory exists under com/ibm/bamoe in that machine's ~/.m2. Take the 9.5 BOM/starter coordinates from
+                        the 9.5.x docs (AGENTS.md "Knowledge source discipline"), keep the PAIR rule: a BAMOE BOM
+                        PLUS org.springframework.boot:spring-boot-dependencies.
+                        PostgreSQL (flyway-database-postgresql / postgresql runtime deps).
+
+  Do NOT add quarkus-bom, bamoe-quarkus-bom, io.quarkus.* or quarkus-maven-plugin.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>__GROUP_ID__</groupId>
+  <artifactId>__ARTIFACT_ID__</artifactId>
+  <version>__VERSION__</version>
+  <name>__PROJECT_NAME__</name>
+
+  <properties>
+    <!-- Contract: Java 21. (17 also compiled and passed tests on a JDK 21 runtime; a true Java 17 runtime is Untested.) -->
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <version.bamoe>__VERSION_BAMOE__</version.bamoe>
+    <version.org.springframework.boot>__VERSION_SPRING_BOOT__</version.org.springframework.boot>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.ibm.bamoe</groupId>
+        <artifactId>bamoe-bom</artifactId>
+        <version>${version.bamoe}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- REQUIRED: the BAMOE BOM does not manage org.springframework.boot starters.
+           Without this import the build fails: 'dependencies.dependency.version' for
+           org.springframework.boot:spring-boot-starter-jdbc:jar is missing. -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${version.org.springframework.boot}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Workflows (also brings springdoc-openapi, spring-boot-starter-web, spring-boot-starter-validation) -->
+    <dependency>
+      <groupId>org.jbpm</groupId>
+      <artifactId>jbpm-with-drools-spring-boot-starter</artifactId>
+    </dependency>
+    <!-- JDBC persistence (also brings kie-addons-springboot-flyway, spring-boot-starter-jdbc, flyway-core) -->
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-addons-springboot-persistence-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jbpm</groupId>
+      <artifactId>jbpm-addons-springboot-usertask-storage-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kogito-addons-springboot-embedded-jobs</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kogito-addons-springboot-embedded-jobs-jpa</artifactId>
+    </dependency>
+    <!-- Optional and harmless: both also arrive transitively -->
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-addons-springboot-flyway</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- PostgreSQL (Untested: no PostgreSQL was available) -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.kie.kogito</groupId>
+        <artifactId>kogito-maven-plugin</artifactId>
+        <version>${version.bamoe}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generateModel</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${version.org.springframework.boot}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

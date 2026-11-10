@@ -1,0 +1,23 @@
+package __APP_PACKAGE__;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+/**
+ * Spring Boot entry point (Confirmed-by-build, tutorial-12-spring).
+ *
+ * Do NOT name this class "Application": Kogito generates org.kie.kogito.app.Application
+ * (bean name "application") and the two collide (ConflictingBeanDefinitionException).
+ *
+ * scanBasePackages is REQUIRED: the generated Kogito beans live in org.kie.kogito.app (and
+ * org.kie.*, org.drools.*, org.jbpm.*), outside the application package, so a plain
+ * @SpringBootApplication fails with "No qualifying bean of type 'org.kie.kogito.app.Application'".
+ * An explicit scanBasePackages REPLACES default scanning, so the application's own package must be listed too.
+ * Add "http**" only for DMN models with URL namespaces (taken from the reference service; Untested here).
+ */
+@SpringBootApplication(scanBasePackages = { "org.kie.**", "org.drools.**", "org.jbpm.**", "com.ibm.bamoe.**", "__APP_PACKAGE__.**" })
+public class __APP_NAME__SpringBootApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(__APP_NAME__SpringBootApplication.class, args);
+    }
+}

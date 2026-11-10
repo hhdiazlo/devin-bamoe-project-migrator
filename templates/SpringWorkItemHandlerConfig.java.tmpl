@@ -1,0 +1,39 @@
+package __APP_PACKAGE__.config;
+
+import org.kie.kogito.process.impl.DefaultWorkItemHandlerConfig;
+import org.springframework.stereotype.Component;
+
+import __APP_PACKAGE__.handler.__HANDLER_CLASS__;
+
+import jakarta.annotation.PostConstruct;
+
+/**
+ * Spring work item handler registration (Confirmed-by-build, tutorial-12-spring). Replaces the v8
+ * kie-deployment-descriptor.xml entry. Quarkus uses an @ApplicationScoped class instead; that form is NOT
+ * a Spring bean and is never picked up here.
+ *
+ * Rules:
+ *  - a Spring bean (@Component or @Configuration) that is a WorkItemHandlerConfig;
+ *  - the registered name must equal the BPMN drools:taskName, NOT the v8 descriptor name
+ *    (tutorial-12 v8 registered "DatabaseQuery" while the BPMN task is "DatabaseTask");
+ *  - register ALL custom tasks of the project, once each;
+ *  - a missing registration is a RUNTIME error (KogitoWorkItemHandlerNotFoundException), not a build error.
+ *
+ * Also confirmed to work: an @Configuration subclass registering in its constructor, and an
+ * @Bean WorkItemHandlerConfig factory method returning a configured DefaultWorkItemHandlerConfig.
+ * The handler itself is a @Component extending DefaultKogitoWorkItemHandler (constructor-injected beans, no @Inject).
+ */
+@Component
+public class __HANDLER_CLASS__Config extends DefaultWorkItemHandlerConfig {
+
+    private final __HANDLER_CLASS__ handler;
+
+    public __HANDLER_CLASS__Config(__HANDLER_CLASS__ handler) {
+        this.handler = handler;
+    }
+
+    @PostConstruct
+    void init() {
+        register("__BPMN_TASK_NAME__", handler);
+    }
+}
