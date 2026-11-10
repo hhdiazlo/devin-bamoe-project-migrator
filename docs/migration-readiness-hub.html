@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="A client-side migration readiness dashboard for planning BAMOE 8 to BAMOE 9 application migrations: surface assessment, tutorial mapping, SME review areas, automation candidates, and exportable migration plans." />
+<title>BAMOE 8 → 9 · Migration Readiness Hub</title>
+<style>
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root{
+  --bg:#0f1215;
+  --layer:#171b1f;
+  --layer-2:#1e2429;
+  --layer-3:#262d33;
+  --line:#2b3237;
+  --line-2:#3c454c;
+  --ink:#f2f4f8;
+  --ink-2:#c1c7cd;
+  --ink-3:#8b9298;
+  --blue:#4589ff;
+  --blue-int:#0f62fe;
+  --blue-hov:#0353e9;
+  --cyan:#33b1ff;
+  --teal:#08bdba;
+  --green:#42be65;
+  --amber:#f1c21b;
+  --red:#fa4d56;
+  --purple:#a56eff;
+  --magenta:#ff7eb6;
+  --sans:"IBM Plex Sans","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  --u:8px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:var(--sans);
+  font-size:15px;
+  color:var(--ink);
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(rgba(255,255,255,.019) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.019) 1px, transparent 1px);
+  background-size:72px 72px;
+  background-position:center top;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+h1,h2,h3,h4{margin:0;font-weight:300;letter-spacing:-.02em;line-height:1.12}
+p{margin:0}
+ul{margin:0;padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+::selection{background:rgba(69,137,255,.32)}
+
+.shell{width:min(1400px,calc(100% - 40px));margin:0 auto}
+.mono{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);font-weight:500}
+.eyebrow.dim{color:var(--ink-3)}
+.lede{color:var(--ink-2);line-height:1.6;max-width:76ch}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:12px;top:12px;z-index:200;background:var(--ink);color:#000;padding:10px 14px}
+
+/* ============================================================
+   MASTHEAD
+   ============================================================ */
+.masthead{position:sticky;top:0;z-index:80;background:rgba(15,18,21,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.masthead::before{content:"";display:block;height:3px;background:linear-gradient(90deg,var(--blue-int),var(--cyan) 46%,var(--teal))}
+.mast-inner{display:flex;align-items:center;gap:20px;min-height:60px}
+.wordmark{display:flex;align-items:center;gap:10px;color:var(--ink);flex:none}
+.wordmark:hover{text-decoration:none}
+.wm-mark{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;background:var(--ink);color:#0b0e11;padding:5px 7px}
+.wm-name{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.wm-name em{font-style:normal;color:var(--ink-3);font-weight:400}
+.tabs{display:flex;gap:0;margin-left:8px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:12px 14px;font-size:13.5px;color:var(--ink-3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink);background:var(--layer)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--blue)}
+.mast-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+.plan-pill{display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);padding:8px 11px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-2)}
+.plan-pill:hover{border-color:var(--blue);color:var(--ink)}
+.plan-pill b{background:var(--blue-int);color:#fff;padding:1px 6px;font-size:11px}
+.plan-pill.pulse{animation:pulse .5s ease}
+@keyframes pulse{50%{border-color:var(--teal);box-shadow:0 0 0 3px rgba(8,189,186,.18)}}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 16px;font-size:14px;font-weight:500;border:1px solid transparent;transition:background .12s ease,border-color .12s ease}
+.btn-primary{background:var(--blue-int);color:#fff}
+.btn-primary:hover{background:var(--blue-hov);text-decoration:none}
+.btn-ghost{border-color:var(--line-2);color:var(--ink)}
+.btn-ghost:hover{background:var(--layer-2);border-color:var(--ink-3);text-decoration:none}
+.btn-quiet{color:var(--ink-2);padding:10px 12px;font-size:13px;border-color:transparent}
+.btn-quiet:hover{background:var(--layer-2);color:var(--ink)}
+.btn-sm{padding:9px 12px;font-size:13px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+
+/* ============================================================
+   VIEWS + SECTION HEADS
+   ============================================================ */
+main{padding-bottom:72px}
+.view{display:none}
+.view.active{display:block;animation:rise .22s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sec{padding:44px 0 0}
+.sec-head{border-top:1px solid var(--line);padding-top:16px;margin-bottom:20px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:end}
+.sec-head h2{font-size:clamp(1.5rem,2.6vw,2.1rem);margin:10px 0 8px}
+.sec-head .lede{font-size:14.5px}
+.note{border-left:2px solid var(--amber);background:rgba(241,194,27,.06);padding:14px 16px;color:#f5e5a8;font-size:13.5px;line-height:1.6}
+.note.blue{border-color:var(--blue);background:rgba(69,137,255,.07);color:#cfe0ff}
+.note strong{font-weight:600}
+
+/* ============================================================
+   HERO + DELTA GATE (signature)
+   ============================================================ */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:64px 0 44px}
+.hero h1{font-size:clamp(2.3rem,4.6vw,3.9rem);letter-spacing:-.035em;margin:16px 0 20px;max-width:20ch}
+.hero h1 b{font-weight:600;color:var(--cyan)}
+.hero .lede{font-size:16.5px}
+.hero .btn-row{margin-top:26px}
+.gate{border:1px solid var(--line);background:var(--layer)}
+.gate-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.gate-body{display:grid;grid-template-columns:1fr 26px 1fr}
+.gate-cell{padding:26px 20px;min-height:150px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.gate-cell .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.gate-cell .token{font-family:var(--mono);font-size:clamp(15px,1.5vw,19px);line-height:1.35;word-break:break-word}
+.gate-cell.from{background:linear-gradient(180deg,rgba(250,77,86,.05),transparent)}
+.gate-cell.from .token{color:#ffb3b8}
+.gate-cell.to{background:linear-gradient(180deg,rgba(8,189,186,.06),transparent);border-left:1px solid var(--line)}
+.gate-cell.to .token{color:#3ddbd9}
+.gate-arrow{display:grid;place-items:center;border-left:1px solid var(--line);color:var(--ink-3);font-family:var(--mono)}
+.gate-mid{border-top:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;gap:12px;background:var(--layer-2)}
+.gate-mid .dotmark{width:7px;height:7px;background:var(--amber);flex:none}
+.gate-mid .concern{font-size:13.5px;color:var(--ink-2)}
+.gate-mid .concern b{color:var(--ink);font-weight:600}
+.gate-ticks{display:flex;gap:4px;margin-left:auto}
+.gate-ticks i{width:16px;height:2px;background:var(--line-2);display:block}
+.gate-ticks i.on{background:var(--cyan)}
+.fade-swap{animation:fadeSwap .5s ease}
+@keyframes fadeSwap{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   METRIC STRIP
+   ============================================================ */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--layer)}
+.strip-item{padding:18px 20px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.strip-item:last-child{border-right:0}
+.strip-item .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.strip-item .v{font-size:2.1rem;font-weight:300;letter-spacing:-.04em;line-height:1}
+.strip-item .v small{font-size:.9rem;color:var(--ink-3);letter-spacing:0}
+.strip-item .s{font-size:12.5px;color:var(--ink-3)}
+.v.blue{color:var(--cyan)} .v.teal{color:var(--teal)} .v.red{color:#ff8389} .v.purple{color:var(--purple)}
+
+/* ============================================================
+   PANELS + PRIMARY CARDS
+   ============================================================ */
+.panel{border:1px solid var(--line);background:var(--layer);padding:20px}
+.panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.panel-title h3{font-size:1.05rem;font-weight:600;letter-spacing:-.01em}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.pcard{border:1px solid var(--line);background:var(--layer);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.pcard::before{content:"";position:absolute;inset:0 auto auto 0;width:100%;height:2px;background:var(--accent,var(--blue))}
+.pcard-head{padding:22px 20px 14px}
+.pcard-q{font-size:1.45rem;font-weight:300;letter-spacing:-.03em;margin:10px 0 8px}
+.pcard-sub{font-size:13.5px;color:var(--ink-3);line-height:1.5}
+.pcard-viz{padding:4px 20px 18px;flex:1}
+.pcard-foot{border-top:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink-2)}
+.pcard-foot button{color:var(--blue);font-size:13px;font-weight:500}
+.pcard-foot button:hover{text-decoration:underline}
+
+.bandbar{display:flex;height:10px;border:1px solid var(--line);margin:14px 0 12px}
+.bandbar span{display:block}
+.bandbar .g{background:var(--green)} .bandbar .y{background:var(--amber)} .bandbar .r{background:var(--red)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink-3)}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:6px}
+.legend .g{background:var(--green)} .legend .y{background:var(--amber)} .legend .r{background:var(--red)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.kv:last-child{border-bottom:0}
+.kv span:last-child{font-family:var(--mono);color:var(--ink-3);font-size:12.5px;text-align:right}
+.donut-wrap{display:flex;align-items:center;gap:18px;margin-top:8px}
+.donut{width:104px;height:104px;flex:none;border-radius:50%;
+  background:conic-gradient(var(--green) 0 var(--dg,28%),var(--amber) var(--dg,28%) var(--dy,78%),var(--red) var(--dy,78%) 100%);
+  -webkit-mask:radial-gradient(circle,transparent 57%,#000 58%);
+  mask:radial-gradient(circle,transparent 57%,#000 58%)}
+.donut-num{font-size:1.9rem;font-weight:300;letter-spacing:-.04em;line-height:1}
+.carry{display:grid;gap:7px;margin-top:4px;font-size:13.5px;color:var(--ink-2)}
+.carry li{display:flex;gap:9px;align-items:flex-start}
+.carry i{color:var(--green);font-family:var(--mono);flex:none}
+.meter{display:flex;gap:3px;margin:8px 0 2px}
+.meter b{flex:1;height:7px;background:var(--layer-3);display:block}
+.meter b.on{background:var(--purple)}
+.trackline{padding:11px 0;border-bottom:1px solid var(--line)}
+.trackline:last-child{border-bottom:0}
+.trackline .t{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.trackline .t em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.steps-mini{display:grid;gap:0;margin-top:6px}
+.smini{display:grid;grid-template-columns:26px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+.smini:last-child{border-bottom:0}
+.smini i{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-style:normal}
+.smini.done{color:var(--ink)}
+.smini.done i{color:var(--teal)}
+
+/* ============================================================
+   JOURNEY RAIL
+   ============================================================ */
+.rail{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line);background:var(--layer)}
+.rail-col{border-right:1px solid var(--line);padding:18px}
+.rail-col:last-child{border-right:0}
+.rail-col .st{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--cyan);text-transform:uppercase}
+.rail-col h4{font-size:1rem;font-weight:600;margin:10px 0 12px}
+.rail-col .row2{font-size:13px;line-height:1.5;color:var(--ink-2);padding-top:10px;border-top:1px solid var(--line);margin-top:10px}
+.rail-col .row2 em{font-style:normal;display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.rail-prog{display:flex;height:4px;background:var(--layer-3)}
+.rail-prog b{display:block;background:linear-gradient(90deg,var(--blue-int),var(--cyan));width:40%}
+
+/* ============================================================
+   ASSESSMENT
+   ============================================================ */
+.q-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.qcard{border:1px solid var(--line);background:var(--layer);padding:16px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.qcard.yes{border-color:rgba(69,137,255,.55);background:linear-gradient(90deg,rgba(69,137,255,.07),var(--layer) 40%)}
+.qcard.unsure{border-color:rgba(241,194,27,.45)}
+.qcard .qt{font-size:14.5px;font-weight:500;line-height:1.35}
+.qcard .qs{font-size:12.5px;color:var(--ink-3);margin-top:5px;line-height:1.45}
+.seg{display:flex;border:1px solid var(--line-2);flex:none}
+.seg button{padding:8px 11px;font-size:12px;font-family:var(--mono);letter-spacing:.06em;color:var(--ink-3);border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--layer-2);color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#0b0e11}
+.qcard.yes .seg button[aria-pressed="true"]{background:var(--blue-int);color:#fff}
+.qcard.unsure .seg button[aria-pressed="true"]{background:var(--amber);color:#20180a}
+.progress{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-3);letter-spacing:.08em}
+.progress .bar{flex:1;height:4px;background:var(--layer-3);max-width:280px}
+.progress .bar b{display:block;height:100%;background:var(--cyan);width:0}
+.result-empty{border:1px dashed var(--line-2);padding:34px;text-align:center;color:var(--ink-3);font-size:14px}
+
+/* ============================================================
+   CHIPS / BADGES
+   ============================================================ */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line-2);padding:6px 9px;font-size:12.5px;color:var(--ink-2);background:var(--layer-2)}
+.chip b{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.chip.blue{border-color:rgba(69,137,255,.5);color:#cfe0ff;background:rgba(69,137,255,.08)}
+.chip.teal{border-color:rgba(8,189,186,.5);color:#3ddbd9;background:rgba(8,189,186,.08)}
+.chip.purple{border-color:rgba(165,110,255,.5);color:#d4bbff;background:rgba(165,110,255,.09)}
+.chip.magenta{border-color:rgba(255,126,182,.45);color:#ffb3d0;background:rgba(255,126,182,.08)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;border:1px solid var(--line-2);color:var(--ink-3)}
+.badge i{width:7px;height:7px;display:block;flex:none}
+.badge.low{color:#6fdc8c;border-color:rgba(66,190,101,.5)} .badge.low i{background:var(--green)}
+.badge.medium{color:#f1c21b;border-color:rgba(241,194,27,.45)} .badge.medium i{background:var(--amber)}
+.badge.high{color:#ff8389;border-color:rgba(250,77,86,.5)} .badge.high i{background:var(--red)}
+.badge.baseline{color:var(--cyan);border-color:rgba(51,177,255,.45)} .badge.baseline i{background:var(--cyan)}
+
+/* ============================================================
+   TUTORIAL CATALOG
+   ============================================================ */
+.toolbar{display:grid;grid-template-columns:minmax(220px,1.7fr) repeat(3,minmax(130px,.9fr)) auto;gap:8px;margin-bottom:14px}
+.control{width:100%;background:var(--layer-2);border:1px solid transparent;border-bottom:1px solid var(--line-2);padding:12px 12px;color:var(--ink)}
+.control::placeholder{color:var(--ink-3)}
+.control:focus{outline:2px solid var(--blue);outline-offset:-2px}
+select.control{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+select.control option{background:#1b2126}
+.count-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;font-size:13px;color:var(--ink-3);margin-bottom:14px;font-family:var(--mono);letter-spacing:.06em}
+.t-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tcard{border:1px solid var(--line);background:var(--layer);display:flex;flex-direction:column;transition:border-color .14s ease,transform .14s ease}
+.tcard:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.tcard.in-plan{border-color:rgba(8,189,186,.55)}
+.tcard-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.tcard-no{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--cyan)}
+.tcard-body{padding:16px;flex:1;display:flex;flex-direction:column;gap:12px}
+.tcard h3{font-size:1.12rem;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+.tcard .path{font-family:var(--mono);font-size:11px;color:var(--ink-3);word-break:break-all}
+.tcard .scope{font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.tcard .track{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.tcard-actions{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.tcard-actions>*{padding:13px 10px;text-align:center;font-size:13px;font-weight:500;border-right:1px solid var(--line);color:var(--ink-2)}
+.tcard-actions>*:last-child{border-right:0}
+.tcard-actions a:hover,.tcard-actions button:hover{background:var(--layer-2);color:var(--ink);text-decoration:none}
+.tcard-actions .add{color:var(--blue)}
+.tcard-actions .add.on{background:rgba(8,189,186,.1);color:var(--teal)}
+.empty{grid-column:1/-1;border:1px dashed var(--line-2);padding:44px;text-align:center;color:var(--ink-3)}
+
+/* ============================================================
+   PLAN
+   ============================================================ */
+.plan-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start}
+.plan-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+.plan-row:last-of-type{border-bottom:0}
+.plan-row .tick{color:var(--teal);font-family:var(--mono)}
+.plan-row .nm{font-size:14px}
+.plan-row .nm em{font-style:normal;display:block;font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:3px;word-break:break-all}
+.plan-row .rm{color:var(--ink-3);font-family:var(--mono);font-size:15px;padding:4px 8px}
+.plan-row .rm:hover{color:var(--red);background:var(--layer-2)}
+.agg{border:1px solid var(--line);background:var(--layer);padding:18px;margin-bottom:16px}
+.agg h4{font-size:.95rem;font-weight:600;margin-bottom:4px}
+.agg .why{font-size:12.5px;color:var(--ink-3);margin-bottom:12px;line-height:1.5}
+pre.json{margin:0;background:#0b0e11;border:1px solid var(--line);padding:16px;overflow:auto;max-height:340px;font-family:var(--mono);font-size:11.5px;line-height:1.65;color:#c9d5e1;white-space:pre}
+.mix{display:flex;height:26px;border:1px solid var(--line);font-family:var(--mono);font-size:10.5px}
+.mix span{display:flex;align-items:center;justify-content:center;color:#0b0e11;font-weight:600;overflow:hidden}
+.mix .l{background:var(--green)} .mix .m{background:var(--amber)} .mix .h{background:var(--red)}
+.signal-line{display:flex;align-items:baseline;gap:10px;margin-top:14px}
+.signal-line .big{font-size:1.6rem;font-weight:300;letter-spacing:-.03em}
+.field{display:grid;gap:6px;margin-bottom:12px}
+.field label{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.field .hint{font-size:12px;color:var(--ink-3)}
+textarea.control{min-height:74px;resize:vertical;line-height:1.55}
+
+/* ============================================================
+   HEATMAP
+   ============================================================ */
+.hm{border:1px solid var(--line);background:var(--layer)}
+.hm-row{display:grid;grid-template-columns:minmax(230px,1.5fr) repeat(3,minmax(120px,1fr));border-bottom:1px solid var(--line)}
+.hm-row:last-child{border-bottom:0}
+.hm-row.head{background:var(--layer-2);position:sticky;top:63px;z-index:5}
+.hm-cell{padding:13px 14px;border-right:1px solid var(--line);font-size:13px}
+.hm-cell:last-child{border-right:0}
+.hm-row.head .hm-cell{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.hm-row.head .hm-cell.g{color:#6fdc8c} .hm-row.head .hm-cell.y{color:#f1c21b} .hm-row.head .hm-cell.r{color:#ff8389}
+.hm-surface{display:flex;flex-direction:column;gap:6px}
+.hm-surface .nm{font-size:13.5px;font-weight:500}
+.hm-surface .rel{display:flex;flex-wrap:wrap;gap:5px}
+.hm-surface .rel button{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);border:1px solid var(--line);padding:2px 5px}
+.hm-surface .rel button:hover{border-color:var(--blue);color:var(--blue)}
+.hm-cell.band{color:var(--ink-3);font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:8px}
+.hm-cell.band.on{font-family:var(--sans);font-size:13px;color:var(--ink)}
+.hm-cell.band.on.g{background:rgba(66,190,101,.14);box-shadow:inset 3px 0 0 var(--green)}
+.hm-cell.band.on.y{background:rgba(241,194,27,.13);box-shadow:inset 3px 0 0 var(--amber)}
+.hm-cell.band.on.r{background:rgba(250,77,86,.13);box-shadow:inset 3px 0 0 var(--red)}
+.hm-row.off{opacity:.34}
+.hm-row .scopeflag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--cyan)}
+.hm-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:12px}
+.switch{display:inline-flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.switch input{appearance:none;width:34px;height:18px;background:var(--layer-3);border:1px solid var(--line-2);position:relative;flex:none}
+.switch input::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;background:var(--ink-3);transition:.14s ease}
+.switch input:checked{background:rgba(69,137,255,.28);border-color:var(--blue)}
+.switch input:checked::after{left:18px;background:var(--blue)}
+
+/* ============================================================
+   GALLERY
+   ============================================================ */
+.gal{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.gcard{border:1px solid var(--line);background:var(--layer)}
+.gcard-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gcard-head .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.flow{display:grid;grid-template-columns:1fr;align-items:stretch}
+.flow-node{padding:15px 16px;display:flex;flex-direction:column;gap:5px}
+.flow-node .n-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.flow-node .n-val{font-family:var(--mono);font-size:14px;line-height:1.4;word-break:break-word}
+.flow-node.v8 .n-val{color:#ffb3b8}
+.flow-node.v9 .n-val{color:#3ddbd9}
+.flow-node.mid{background:var(--layer-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.flow-node.mid .n-val{font-family:var(--sans);font-size:14px;color:var(--ink)}
+.flow-arrow{display:flex;align-items:center;gap:8px;padding:0 16px 0;color:var(--ink-3);font-family:var(--mono);font-size:11px}
+.flow-arrow::before{content:"";flex:none;width:1px;height:16px;background:var(--line-2);margin-left:2px}
+.gcard-foot{padding:13px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:9px}
+.gcard-foot .wf{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ============================================================
+   AUTOMATION
+   ============================================================ */
+.auto-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.acard{border:1px solid var(--line);background:var(--layer);padding:18px;display:flex;flex-direction:column;gap:12px}
+.acard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.acard h4{font-size:1.02rem;font-weight:600}
+.acard .desc{font-size:13px;color:var(--ink-2);line-height:1.55}
+.sig{display:flex;align-items:center;gap:10px}
+.sig .bars{display:flex;gap:3px}
+.sig .bars b{width:16px;height:9px;background:var(--layer-3);display:block}
+.sig .bars b.on{background:var(--purple)}
+.sig .txt{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.acard.cold{opacity:.62}
+
+/* ============================================================
+   WORKSPACE
+   ============================================================ */
+.tracks{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.trk{border:1px solid var(--line);background:var(--layer);padding:18px;display:flex;flex-direction:column;gap:10px}
+.trk h4{font-size:1.02rem;font-weight:600}
+.trk p{font-size:13px;color:var(--ink-2);line-height:1.55}
+.st-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:5px 8px;border:1px solid}
+.st-available{color:#6fdc8c;border-color:rgba(66,190,101,.5);background:rgba(66,190,101,.08)}
+.st-exploring{color:var(--cyan);border-color:rgba(51,177,255,.45);background:rgba(51,177,255,.08)}
+.st-feedback{color:#d4bbff;border-color:rgba(165,110,255,.5);background:rgba(165,110,255,.09)}
+.st-roadmap{color:var(--ink-2);border-color:var(--line-2);background:var(--layer-2)}
+.fb-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.fb-entry{border:1px solid var(--line);background:var(--layer);padding:15px;margin-bottom:10px}
+.fb-entry .eh{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:10px}
+.fb-entry .eh strong{font-size:14px;font-weight:600}
+.fb-entry dl{margin:0;display:grid;gap:8px}
+.fb-entry dt{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.fb-entry dd{margin:2px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5}
+
+/* ============================================================
+   FOOTER / DIALOG / TOAST
+   ============================================================ */
+footer{border-top:1px solid var(--line);background:var(--layer);padding:32px 0 44px;margin-top:56px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:28px;font-size:13px;color:var(--ink-3);line-height:1.65}
+.foot-grid h5{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 10px;font-weight:500}
+.foot-grid a{display:block;margin-bottom:6px}
+
+dialog{width:min(780px,calc(100% - 24px));max-height:88vh;padding:0;color:var(--ink);background:var(--layer);border:1px solid var(--line-2);box-shadow:0 24px 80px rgba(0,0,0,.6)}
+dialog[open]{display:flex;flex-direction:column;overflow:hidden}
+dialog::backdrop{background:rgba(6,8,10,.76);backdrop-filter:blur(3px)}
+.m-head{flex:none;background:var(--layer);border-bottom:1px solid var(--line);padding:20px 24px;display:grid;grid-template-columns:1fr auto;gap:16px}
+.m-head h2{font-size:1.5rem;font-weight:300;letter-spacing:-.03em;margin:9px 0 8px}
+.m-head .path{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);word-break:break-all}
+.m-close{width:36px;height:36px;border:1px solid var(--line-2);color:var(--ink-2);font-size:18px;line-height:1;align-self:start}
+.m-close:hover{background:var(--layer-2);color:var(--ink)}
+.m-body{padding:22px 24px;overflow:auto;flex:1 1 auto;min-height:0}
+.m-block{margin-bottom:22px}
+.m-block:last-child{margin-bottom:0}
+.m-block h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:9px;font-weight:500}
+.m-block p{font-size:14px;color:var(--ink-2);line-height:1.65}
+.m-block ul{display:grid;gap:8px}
+.m-block ul li{font-size:14px;color:var(--ink-2);line-height:1.55;display:grid;grid-template-columns:18px 1fr;gap:6px}
+.m-block ul li::before{content:"›";color:var(--ink-3);font-family:var(--mono)}
+.m-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.m-foot{flex:none;background:var(--layer);border-top:1px solid var(--line);padding:14px 24px;display:flex;gap:8px;flex-wrap:wrap}
+#toastbar{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(14px);background:var(--ink);color:#0b0e11;padding:12px 18px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;transition:.2s ease;z-index:300;max-width:calc(100% - 32px);text-align:center}
+#toastbar.show{opacity:1;transform:translateX(-50%)}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1180px){
+  .hero{grid-template-columns:1fr;gap:32px;padding-top:44px}
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+  .t-grid{grid-template-columns:repeat(2,1fr)}
+  .rail{grid-template-columns:repeat(2,1fr)}
+  .rail-col{border-bottom:1px solid var(--line)}
+  .toolbar{grid-template-columns:1fr 1fr}
+  .wm-name em{display:none}
+}
+@media (max-width:900px){
+  .plan-layout,.fb-layout,.gal,.auto-grid,.grid-3,.grid-2{grid-template-columns:1fr}
+  .tracks{grid-template-columns:1fr 1fr}
+  .q-grid{grid-template-columns:1fr}
+  .strip{grid-template-columns:1fr 1fr}
+  .strip-item:nth-child(2n){border-right:0}
+  .strip-item:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .m-cols{grid-template-columns:1fr}
+  .hm-row.head{display:none}
+  .hm-row{grid-template-columns:1fr;padding:4px 0}
+  .hm-cell{border-right:0;padding:10px 14px}
+  .hm-cell.band:not(.on){display:none}
+}
+@media (max-width:640px){
+  .shell{width:calc(100% - 24px)}
+  .grid-4,.t-grid,.rail,.tracks{grid-template-columns:1fr}
+  .strip{grid-template-columns:1fr}
+  .strip-item{border-right:0;border-bottom:1px solid var(--line)}
+  .foot-grid{grid-template-columns:1fr}
+  .gate-body{grid-template-columns:1fr}
+  .gate-cell.to{border-left:0;border-top:1px solid var(--line)}
+  .gate-arrow{display:none}
+  .qcard{grid-template-columns:1fr}
+  .sec-head{grid-template-columns:1fr}
+  .mast-inner{flex-wrap:wrap;gap:8px;padding:8px 0}
+  .tabs{order:3;width:100%;margin-left:-6px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body id="top">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="shell mast-inner">
+    <a class="wordmark" href="#top" onclick="go('dashboard');return false;">
+      <span class="wm-mark">8&nbsp;→&nbsp;9</span>
+      <span class="wm-name">Migration Readiness Hub <em>/ BAMOE</em></span>
+    </a>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" aria-selected="true" data-view="dashboard">Dashboard</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="assessment">Assessment</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="tutorials">Tutorials</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="plan">Plan</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="lens">Planning lens</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="automation">Automation</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="workspace">Workspace</button>
+    </nav>
+    <div class="mast-right">
+      <button class="plan-pill" id="planPill" title="Open the migration plan">PLAN <b id="planPillCount">0</b></button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="shell">
+
+<!-- ============================ DASHBOARD ============================ -->
+<section class="view active" id="view-dashboard" role="tabpanel" aria-label="Dashboard">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Migration readiness console · BAMOE 8 → BAMOE 9</div>
+      <h1>See what moves, what waits, and what needs a <b>decision</b>.</h1>
+      <p class="lede">Answer eleven questions about your application. Get the surfaces that change, the tutorials that apply, the reviews to schedule, the work that looks automatable — and a migration plan you can export.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="go('assessment')">Start assessment</button>
+        <button class="btn btn-ghost" onclick="go('tutorials')">Open tutorial catalog</button>
+      </div>
+    </div>
+    <aside class="gate" id="heroGate" aria-label="Example migration delta">
+      <div class="gate-head"><span>Migration delta</span><span id="gateIndex">01 / 05</span></div>
+      <div class="gate-body">
+        <div class="gate-cell from"><span class="tag">BAMOE 8</span><span class="token" id="gateFrom">javax.persistence</span></div>
+        <div class="gate-arrow" aria-hidden="true">→</div>
+        <div class="gate-cell to"><span class="tag">BAMOE 9</span><span class="token" id="gateTo">jakarta.persistence</span></div>
+      </div>
+      <div class="gate-mid">
+        <i class="dotmark" aria-hidden="true"></i>
+        <span class="concern">Concern: <b id="gateConcern">Namespace migration</b></span>
+        <span class="gate-ticks" id="gateTicks" aria-hidden="true"></span>
+      </div>
+    </aside>
+  </div>
+
+  <div class="strip" id="readinessStrip" aria-label="Live readiness signals"></div>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow dim">Four questions, answered from your own inputs</div>
+        <h2>Migration overview</h2>
+        <p class="lede">Every number below is derived from the surfaces you declare in the assessment and the tutorials in your plan. Nothing here is an effort estimate.</p>
+      </div>
+    </div>
+    <div class="grid-4" id="primaryCards"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow dim">Division of labour</div>
+        <h2>Where this hub helps — and where it stops</h2>
+        <p class="lede">The hub is a planning instrument. It can shorten discovery and framing; it cannot inspect your source, your data, or your environments.</p>
+      </div>
+    </div>
+    <div class="rail" id="journeyRail"></div>
+    <div class="rail-prog" style="margin-bottom:16px"><b id="railProg"></b></div>
+    <div class="note"><strong>Planning hypothesis, not product guidance.</strong> Complexity bands, automation signals and review areas in this tool are planning aids generated from tutorial metadata. Validate every one of them against your application's code, dependencies, architecture and supported BAMOE release before committing to scope or dates.</div>
+  </section>
+</section>
+
+<!-- ============================ ASSESSMENT ============================ -->
+<section class="view" id="view-assessment" role="tabpanel" aria-label="Application assessment">
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Step 1 · Declare your surfaces</div>
+        <h2>Application assessment</h2>
+        <p class="lede">Mark what exists in the application you are planning to migrate. Answers stay in this browser and drive the tutorial recommendations, the planning lens, and the automation signals.</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost btn-sm" id="assessAllYes">Mark all yes</button>
+        <button class="btn btn-ghost btn-sm" id="assessClear">Clear answers</button>
+      </div>
+    </div>
+    <div class="progress" style="margin-bottom:16px">
+      <span id="assessCounter">0 / 11 answered</span>
+      <span class="bar"><b id="assessBar"></b></span>
+      <span id="assessScope">0 surfaces in scope</span>
+    </div>
+    <div class="q-grid" id="questionGrid"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Step 2 · Read the output</div>
+        <h2>Generated recommendations</h2>
+        <p class="lede">Tutorials 04 and 13 are always recommended: they carry the cross-cutting changes and the known-issue catalogue that apply regardless of feature set.</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" id="addAllRecommended">Add recommended to plan</button>
+      </div>
+    </div>
+    <div id="assessResults"></div>
+  </section>
+</section>
+
+<!-- ============================ TUTORIALS ============================ -->
+<section class="view" id="view-tutorials" role="tabpanel" aria-label="Tutorial catalog">
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">14 scenarios · paired v8 and v9 references</div>
+        <h2>Tutorial catalog</h2>
+        <p class="lede">Filter to the shape of your application, then add what applies to your migration plan. Every card links to its exact folder in the tutorial repository.</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn btn-ghost btn-sm" id="repoTop" target="_blank" rel="noopener">Repository ↗</a>
+      </div>
+    </div>
+    <div class="toolbar">
+      <input id="search" class="control" type="search" placeholder="Search: persistence, listeners, identity, case…" aria-label="Search tutorials" />
+      <select id="focusFilter" class="control" aria-label="Filter by focus area"><option value="all">All focus areas</option></select>
+      <select id="typeFilter" class="control" aria-label="Filter by migration type"><option value="all">All migration types</option></select>
+      <select id="cxFilter" class="control" aria-label="Filter by complexity"><option value="all">All complexity</option><option value="Low">Low complexity</option><option value="Medium">Medium complexity</option><option value="High">High complexity</option></select>
+      <button class="btn btn-ghost btn-sm" id="resetFilters">Reset</button>
+    </div>
+    <div class="count-row"><span id="countRow">14 SHOWN</span><label class="switch"><input type="checkbox" id="onlyRecommended" /> Show only tutorials recommended by my assessment</label></div>
+    <div class="t-grid" id="tutorialGrid"></div>
+  </section>
+</section>
+
+<!-- ============================ PLAN ============================ -->
+<section class="view" id="view-plan" role="tabpanel" aria-label="Migration plan">
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Step 3 · Assemble the profile</div>
+        <h2>Migration plan builder</h2>
+        <p class="lede">The plan is an application migration profile: the tutorials that apply, the focus areas they aggregate into, the reviews they imply, and the work that looks repeatable enough to automate.</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" id="exportPlan">Export migration plan</button>
+        <button class="btn btn-ghost btn-sm" id="copyPlan">Copy JSON</button>
+        <button class="btn btn-ghost btn-sm" id="clearPlan">Clear plan</button>
+      </div>
+    </div>
+    <div class="field" style="max-width:420px">
+      <label for="profileName">Application profile name</label>
+      <input class="control" id="profileName" placeholder="e.g. Claims intake platform" />
+    </div>
+    <div class="plan-layout">
+      <div>
+        <div class="panel" style="margin-bottom:16px">
+          <div class="panel-title"><h3>Tutorials in plan</h3><span class="eyebrow dim" id="planCountLabel">0 selected</span></div>
+          <div id="planList"></div>
+        </div>
+        <div class="agg">
+          <h4>Complexity mix and planning signal</h4>
+          <p class="why">A weight of 1 for Low, 2 for Medium, 3 for High. It describes how wide the plan is, not how long it takes.</p>
+          <div class="mix" id="planMix"></div>
+          <div class="signal-line"><span class="big" id="planWeightNum">0</span><span class="lede" id="planSignal" style="font-size:13.5px">Add tutorials to generate a signal.</span></div>
+        </div>
+        <div class="agg">
+          <h4>Migration themes</h4>
+          <p class="why">The recurring narratives behind the selected tutorials — useful for naming workstreams.</p>
+          <div class="chips" id="planThemes"></div>
+        </div>
+      </div>
+      <div>
+        <div class="agg">
+          <h4>Recommended focus areas</h4>
+          <p class="why">Aggregated from the focus metadata of every tutorial in the plan. The count shows how many tutorials point at it.</p>
+          <div class="chips" id="planFocus"></div>
+        </div>
+        <div class="agg">
+          <h4>Suggested SME review areas</h4>
+          <p class="why">Expertise the plan implies. Use it to work out who needs to be in the room, and when.</p>
+          <div class="chips" id="planSme"></div>
+        </div>
+        <div class="agg">
+          <h4>Potential automation candidates</h4>
+          <p class="why">Repeatable steps observed across the selected tutorials. Illustrative planning aids — not available tooling.</p>
+          <div class="chips" id="planAuto"></div>
+        </div>
+        <div class="agg">
+          <h4>Export preview</h4>
+          <p class="why">Client-side JSON. Nothing leaves this browser.</p>
+          <pre class="json" id="planJson">{}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ============================ PLANNING LENS ============================ -->
+<section class="view" id="view-lens" role="tabpanel" aria-label="Planning lens">
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Rewrite versus migration</div>
+        <h2>Planning lens</h2>
+        <p class="lede">A qualitative placement of common BAMOE 8 surfaces, to separate what usually carries forward from what usually needs a decision. Read it as a conversation starter with your architects.</p>
+      </div>
+    </div>
+    <div class="hm-toolbar">
+      <div class="legend">
+        <span><i class="g"></i>Mostly transferable or compatible</span>
+        <span><i class="y"></i>Review, configuration or moderate refactoring</span>
+        <span><i class="r"></i>Redesign, architecture review or pattern replacement</span>
+      </div>
+      <label class="switch" style="margin-left:auto"><input type="checkbox" id="onlyScoped" /> Only surfaces in my scope</label>
+    </div>
+    <div class="hm" id="heatmap"></div>
+    <div class="grid-3" style="margin-top:16px">
+      <div class="panel"><div class="panel-title"><h3>Band distribution</h3></div><div class="bandbar" id="lensBar"></div><div id="lensCounts"></div></div>
+      <div class="panel"><div class="panel-title"><h3>How to use this</h3></div><ul class="carry"><li><i>1</i>Confirm the surface actually exists in your application.</li><li><i>2</i>Open the linked tutorial and compare the v8 and v9 example.</li><li><i>3</i>Move the surface into your own band based on what you find.</li><li><i>4</i>Book a review for anything that stays in the right-hand column.</li></ul></div>
+      <div class="panel"><div class="panel-title"><h3>What this is not</h3></div><p class="lede" style="font-size:13.5px">Not an IBM support statement, not a feature-parity matrix, and not an effort model. Placements reflect how often a surface triggers a design decision in migration planning conversations, based on the scope of the tutorials in this repository.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Side by side</div>
+        <h2>Modernization gallery</h2>
+        <p class="lede">The same delta, eight times: what the v8 application holds, the concern it raises, and the v9 shape it tends to take.</p>
+      </div>
+    </div>
+    <div class="gal" id="gallery"></div>
+  </section>
+</section>
+
+<!-- ============================ AUTOMATION ============================ -->
+<section class="view" id="view-automation" role="tabpanel" aria-label="Automation opportunities">
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Signal from your plan</div>
+        <h2>Automation opportunity dashboard</h2>
+        <p class="lede">Where migration work looks repeatable enough that tooling could plausibly help. Signal strength counts the tutorials in your plan that contribute a candidate to each track — it does not describe any existing tool.</p>
+      </div>
+      <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="go('plan')">Adjust plan</button></div>
+    </div>
+    <div class="note blue" style="margin-bottom:16px"><strong>Illustrative only.</strong> Every candidate below is a planning hypothesis about work that repeats. Nothing here implies that an assessment tool, accelerator or code transformer exists, is planned, or is available.</div>
+    <div class="auto-grid" id="autoGrid"></div>
+  </section>
+</section>
+
+<!-- ============================ WORKSPACE ============================ -->
+<section class="view" id="view-workspace" role="tabpanel" aria-label="Workspace">
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Discussion tracks</div>
+        <h2>Migration topics and their conversation status</h2>
+        <p class="lede">Six topics that come up when enterprises plan a BAMOE 8 to 9 migration, with the state of the conversation around each one.</p>
+      </div>
+    </div>
+    <div class="tracks" id="trackGrid"></div>
+    <div class="note" style="margin-top:16px"><strong>Badges describe the conversation, not a product.</strong> "Available" means the approach can be run today with the documentation and tutorials that exist. "Exploring", "Feedback requested" and "Roadmap discussion" describe topics under discussion. No statement here implies a preview programme, a commitment, or a delivery date.</div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Structured input</div>
+        <h2>Product feedback workspace</h2>
+        <p class="lede">Capture migration friction in a consistent shape so it can be compared across applications and teams. Entries are stored in this browser and exported as JSON.</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost btn-sm" id="exportFeedback">Export feedback</button>
+        <button class="btn btn-ghost btn-sm" id="clearFeedback">Clear entries</button>
+      </div>
+    </div>
+    <div class="fb-layout">
+      <form class="panel" id="feedbackForm">
+        <div class="panel-title"><h3>New entry</h3></div>
+        <div class="field"><label for="fbPattern">Migration pattern</label><input class="control" id="fbPattern" required placeholder="e.g. UserGroupCallback backed by an internal LDAP wrapper" /></div>
+        <div class="field"><label for="fbBlocker">Current blocker</label><textarea class="control" id="fbBlocker" required placeholder="What stops the migration today?"></textarea></div>
+        <div class="field"><label for="fbOutcome">Desired outcome</label><textarea class="control" id="fbOutcome" required placeholder="What would a good v9 result look like?"></textarea></div>
+        <div class="field"><label for="fbAuto">Potential automation opportunity</label><textarea class="control" id="fbAuto" placeholder="Which part of this repeats across applications?"></textarea></div>
+        <div class="field"><label for="fbImpact">Business impact</label><textarea class="control" id="fbImpact" placeholder="Who is affected, and what does the delay cost?"></textarea></div>
+        <div class="field"><label for="fbTutorial">Related tutorial (optional)</label><select class="control" id="fbTutorial"><option value="">None</option></select></div>
+        <div class="btn-row"><button class="btn btn-primary btn-sm" type="submit">Add entry</button><button class="btn btn-quiet btn-sm" type="reset">Reset form</button></div>
+      </form>
+      <div>
+        <div class="count-row"><span id="fbCount">0 ENTRIES</span></div>
+        <div id="fbList"></div>
+      </div>
+    </div>
+  </section>
+</section>
+
+</main>
+
+<footer>
+  <div class="shell foot-grid">
+    <div>
+      <h5>Source basis</h5>
+      Tutorial titles, folder names and scopes follow the BAMOE 8 to 9 migration tutorial repository. Complexity bands, focus areas, SME review areas and automation candidates are planning metadata authored for this dashboard, not IBM product guidance or commitments.
+    </div>
+    <div>
+      <h5>Repository</h5>
+      <a id="repoFoot" target="_blank" rel="noopener">Migration tutorials ↗</a>
+      <a href="https://www.ibm.com/docs/en/ibamoe" target="_blank" rel="noopener">IBM BAMOE documentation ↗</a>
+    </div>
+    <div>
+      <h5>Data handling</h5>
+      Assessment answers, plans and feedback entries stay in this browser's local storage. Exports are generated client-side. The page makes no network calls.
+    </div>
+  </div>
+</footer>
+
+<dialog id="detail" aria-labelledby="mTitle">
+  <div class="m-head">
+    <div>
+      <div class="eyebrow" id="mEyebrow"></div>
+      <h2 id="mTitle"></h2>
+      <div class="path" id="mPath"></div>
+    </div>
+    <button class="m-close" id="mClose" aria-label="Close">×</button>
+  </div>
+  <div class="m-body" id="mBody"></div>
+  <div class="m-foot">
+    <a class="btn btn-primary btn-sm" id="mLink" target="_blank" rel="noopener">Open in repository ↗</a>
+    <button class="btn btn-ghost btn-sm" id="mAdd">Add to migration plan</button>
+  </div>
+</dialog>
+
+<div id="toastbar" role="status" aria-live="polite"></div>
+
+<script>
+/* ==========================================================================
+   1 · DATA
+   ========================================================================== */
+const REPO = 'https://github.com/IBM/bamoe-docs/tree/9.5.x/_code/v8-to-v9-migration-tutorials/';
+
+const CAPS = [
+  {key:'bpmn',            q:'Do you use BPMN processes?',            s:'Process definitions, gateways, subprocesses, timers'},
+  {key:'dmn',             q:'Do you use DMN decisions?',             s:'Decision models, decision tables, data types'},
+  {key:'drl',             q:'Do you use DRL or guided rule assets?', s:'DRL files, guided decision tables, ruleflow groups'},
+  {key:'humanTasks',      q:'Do you use human tasks?',               s:'Task assignment, groups, forms, task lists'},
+  {key:'eventListeners',  q:'Do you use event listeners?',           s:'Process, task and rule listeners for audit or metrics'},
+  {key:'email',           q:'Do you use email notifications?',       s:'Notification handlers, templates, mail configuration'},
+  {key:'jpa',             q:'Do you use JPA persistence?',           s:'Entities, persistence.xml, persisted process variables'},
+  {key:'database',        q:'Do you use database integrations?',     s:'Datasources, schema management, asynchronous jobs'},
+  {key:'oidc',            q:'Do you use OIDC or token security?',    s:'Identity providers, JWT claims, role mapping'},
+  {key:'multiModule',     q:'Do you use multi-module projects?',     s:'Maven reactors, parent POMs, shared libraries'},
+  {key:'caseManagement',  q:'Do you use case management?',           s:'Cases, stages, milestones, ad-hoc tasks, case file data'}
+];
+
+const TUTORIALS = [
+  {
+    n:1, title:'Evaluation Process', folder:'tutorial-01-evaluation-process',
+    track:'Business Central sample', migrationComplexity:'Low', caps:['bpmn','humanTasks'],
+    focusAreas:['Workflow Migration','Human Task Modernization'],
+    automationCandidates:['Asset Inventory','Process ID Normalization','Form Usage Detection'],
+    smeReviewAreas:['Workflow Governance','Task UI Ownership'],
+    migrationThemes:['Asset portability','Project scaffolding','Form strategy'],
+    migrationType:['Direct Migration'],
+    scope:'A short approval workflow with user tasks, parallel gateways and Business Central generated forms, moved into a v9 project through both the CLI and the manual path.',
+    why:'It is the smallest complete migration in the set, so it exposes the mechanics — project shape, asset placement, process identifiers, task wiring — before application-specific complexity is added.',
+    questions:['Do our process identifiers survive the v9 naming rules?','Who owns the task UI once generated forms are gone?','Is the CLI path or the manual path a better fit for our repository layout?','How many of our processes are structurally this simple?'],
+    validation:'Run the approval path end to end with two distinct actors, then compare task lists, gateway routing and completion outcomes against a recorded v8 baseline.'
+  },
+  {
+    n:2, title:'Mortgage Application', folder:'tutorial-02-mortgage-application',
+    track:'Business Central sample', migrationComplexity:'Low', caps:['dmn'],
+    focusAreas:['Decision Migration','Test Coverage'],
+    automationCandidates:['DMN Version Scan','Test Scenario Discovery','Asset Inventory'],
+    smeReviewAreas:['Decision Governance','QA Strategy'],
+    migrationThemes:['Decision portability','Regression evidence'],
+    migrationType:['Direct Migration'],
+    scope:'DMN decision tables and their supporting data types migrated with DMN 1.6 compatibility, then re-verified using the sample test scenarios.',
+    why:'Decision logic is usually the least disruptive part of a migration and the easiest to prove. Proving it early takes decisions off the risk register.',
+    questions:['Which DMN version were our models authored against?','Do test scenarios exist, or must they be written before migrating?','Are decision inputs supplied by processes, by APIs, or by both?','Which decisions need signed-off regression evidence?'],
+    validation:'Execute the existing scenario suite against the v9 build and diff decision outputs row by row; treat any changed result as a modelling question before treating it as a defect.'
+  },
+  {
+    n:3, title:'Traffic Violation', folder:'tutorial-03-traffic-violation',
+    track:'Business Central sample', migrationComplexity:'Medium', caps:['bpmn','drl','dmn'],
+    focusAreas:['Rules Modernization','Workflow Migration'],
+    automationCandidates:['Ruleflow-group Detection','Guided Table Conversion','DRL Inventory'],
+    smeReviewAreas:['Rules Authoring Governance','Workflow Governance'],
+    migrationThemes:['Rules modernization','Authoring tool replacement'],
+    migrationType:['Refactor'],
+    scope:'A BPMN process backed by DRL rules, including legacy ruleflow-group behaviour and guided decision tables converted into DRL.',
+    why:'It sits on the seam between orchestration and rule execution, which is where v8 applications most often carry authoring-tool artifacts that have no v9 editor equivalent.',
+    questions:['How many guided decision tables exist, and who maintains them?','Does any process still rely on ruleflow-group activation?','Are rules invoked from processes, from code, or from both?','Do rule authors need a tool, or is DRL in source control acceptable?'],
+    validation:'Fire each rule group with fixtures that cover activation order, then confirm process routing matches the v8 execution log for identical inputs.'
+  },
+  {
+    n:4, title:'Upgrade Guide Scenarios', folder:'tutorial-04-upgrade-guide-scenarios',
+    track:'Upgrade guide', migrationComplexity:'Medium', caps:[], baseline:true,
+    focusAreas:['Code Modernization','Configuration Conversion'],
+    automationCandidates:['Dependency Analysis','javax to jakarta Rewrite','Process ID Normalization','Rule Unit Detection'],
+    smeReviewAreas:['Java Platform','Build Engineering'],
+    migrationThemes:['Code modernization','Namespace migration','Checklist automation'],
+    migrationType:['Cross-cutting Reference'],
+    scope:'Eleven recurring upgrade issues: process identifier rules, javax to jakarta changes, variable and context access, Java type handling and rule unit migration.',
+    why:'These changes appear in nearly every codebase regardless of domain, which makes them the strongest candidates for a repeatable checklist and for tooling.',
+    questions:['Which of the eleven scenarios actually appear in our source?','How many modules still import javax packages?','Do we read process variables through APIs that changed?','Which fixes can be applied mechanically, and which need judgement?'],
+    validation:'Turn each applicable scenario into a pipeline check so a regression fails the build rather than surfacing at runtime.'
+  },
+  {
+    n:5, title:'Event Listeners', folder:'tutorial-05-event-listeners',
+    track:'Event listeners', migrationComplexity:'Medium', caps:['eventListeners'],
+    focusAreas:['Observability','Code Modernization'],
+    automationCandidates:['Listener Discovery','Registration Rewrite','Dependency Analysis'],
+    smeReviewAreas:['Platform Engineering','Observability'],
+    migrationThemes:['Extension points','Observability continuity'],
+    migrationType:['Refactor'],
+    scope:'Process, task and rule event listeners moved onto the v9 APIs and registration model.',
+    why:'Listeners are where teams quietly attached auditing, metrics and side effects. They are invisible in process diagrams and easy to under-scope.',
+    questions:['What is each listener actually doing — audit, metrics, integration or business logic?','Where are listeners registered today?','Does anything downstream depend on event ordering?','Which listeners can be retired instead of migrated?'],
+    validation:'Instrument a single process run and assert the full event sequence, then confirm no downstream consumer of listener output lost records.'
+  },
+  {
+    n:6, title:'Process Variable Persistence', folder:'tutorial-06-process-variable-persistence',
+    track:'Advanced feature', migrationComplexity:'Medium', caps:['jpa'],
+    focusAreas:['Persistence Modernization','Configuration Conversion'],
+    automationCandidates:['Persistence Descriptor Conversion','Entity Annotation Rewrite','Datasource Config Generation'],
+    smeReviewAreas:['Persistence Strategy','Database Administration'],
+    migrationThemes:['Persistence modernization','Configuration conversion'],
+    migrationType:['Configuration Change'],
+    scope:'JPA entities moved to jakarta.persistence, persistence.xml replaced by Quarkus datasource configuration, and Hibernate ORM configured for variable persistence.',
+    why:'Persistence touches code, configuration and schema at the same time. It is the first point where a migration stops being a code exercise.',
+    questions:['Which process variables are persisted as entities today?','Who owns the schema, and can it be recreated or must it be preserved?','Where does datasource configuration come from per environment?','How are long-running instances handled during cutover?'],
+    validation:'Persist a process instance, restart the runtime and resume it, then confirm variable state, types and null handling survived the round trip.'
+  },
+  {
+    n:7, title:'Human Task Escalation', folder:'tutorial-07-human-task-escalation',
+    track:'Advanced feature', migrationComplexity:'Medium', caps:['humanTasks'],
+    focusAreas:['Human Task Modernization','Workflow Migration'],
+    automationCandidates:['Deadline Config Extraction','Assignment Strategy Detection','Asset Inventory'],
+    smeReviewAreas:['Operations','Business Process Owners','Identity Management'],
+    migrationThemes:['Human task modernization','Timer behaviour','Assignment strategy'],
+    migrationType:['Refactor'],
+    scope:'Task deadlines, escalation rules, SLA triggers and dynamic assignment strategies rebuilt on the v9 human task model.',
+    why:'Deadline and reassignment behaviour is an operational contract, not a code detail. It is usually noticed only when it stops firing in production.',
+    questions:['What real SLA commitments sit behind these deadlines?','Who receives the work when the primary assignee misses one?','Is assignment data static, or resolved from an identity source at runtime?','How is timer state carried across a cutover?'],
+    validation:'Compress deadline durations in a test environment and observe every branch: completed on time, escalated, reassigned and expired.'
+  },
+  {
+    n:8, title:'Email Notifications', folder:'tutorial-08-email-notifications',
+    track:'Advanced feature', migrationComplexity:'Low', caps:['email'],
+    focusAreas:['Integration Migration','Configuration Conversion'],
+    automationCandidates:['Work Item Handler Discovery','Template Inventory','Config Externalization'],
+    smeReviewAreas:['Messaging and SMTP Ownership','Communications Compliance'],
+    migrationThemes:['Integration migration','Configuration externalization'],
+    migrationType:['Configuration Change'],
+    scope:'Email notifications rebuilt with work item handlers, template-based messages and externalized mail configuration.',
+    why:'It is the cleanest example of separating a connector from its environment configuration — the pattern most other integration points will follow.',
+    questions:['How many notification types exist, and who owns their content?','Do templates live in code, in the process, or in a content system?','Which environments use different relays and credentials?','Is a failed send allowed to fail the process?'],
+    validation:'Point the handler at a capture mailbox and assert recipients, subject, rendered body, and the behaviour of a deliberately failed send.'
+  },
+  {
+    n:9, title:'Complex Data Models', folder:'tutorial-09-complex-data-models',
+    track:'Custom scenario', migrationComplexity:'High', caps:['jpa','database'],
+    focusAreas:['Data Model Modernization','Persistence Modernization'],
+    automationCandidates:['Entity Graph Analysis','Entity Annotation Rewrite','Serialization Compatibility Scan'],
+    smeReviewAreas:['Domain Data Modeling','Persistence Strategy'],
+    migrationThemes:['Data model modernization','Serialization compatibility'],
+    migrationType:['Refactor'],
+    scope:'Larger JPA entity graphs migrated with updated annotations, validation rules and persistence troubleshooting.',
+    why:'Once relationships, inheritance and lazy loading are involved, the migration surface is defined by the domain model rather than by the process assets.',
+    questions:['Which entities are shared with systems outside this application?','Do any relationships depend on provider-specific behaviour?','Are validation rules enforced in the entity, the process, or both?','Is serialized variable data still compatible with the new model?'],
+    validation:'Load a production-shaped dataset and exercise the deepest relationship paths, checking lazy loading, cascade behaviour and constraint violations against v8 results.'
+  },
+  {
+    n:10, title:'Multi-Module Projects', folder:'tutorial-10-multi-module',
+    track:'Custom scenario', migrationComplexity:'High', caps:['multiModule'],
+    focusAreas:['Build Modernization','Architecture Restructuring'],
+    automationCandidates:['Reactor Topology Mapping','Dependency Analysis','BOM Alignment'],
+    smeReviewAreas:['Build Engineering','Architecture Review'],
+    migrationThemes:['Build modernization','Release topology'],
+    migrationType:['Refactor'],
+    scope:'A Maven multi-module structure migrated, covering parent POM setup, dependency management and communication between modules.',
+    why:'Project structure decides how the work can be parallelized and released. Getting it wrong makes every other migration task slower.',
+    questions:['Does the current module split still reflect how the teams work?','Which modules must be released together?','Where is dependency version management centralized?','Can modules migrate incrementally, or only as a set?'],
+    validation:'Build the full reactor from a clean local repository, then remove each inter-module dependency in turn to confirm the boundaries are real.'
+  },
+  {
+    n:11, title:'External Services and Security', folder:'tutorial-11-usergroupcallback-security',
+    track:'Custom scenario', migrationComplexity:'High', caps:['oidc','humanTasks'],
+    focusAreas:['Security Modernization','Identity Migration'],
+    automationCandidates:['Callback Implementation Discovery','Role Mapping Extraction','Config Conversion'],
+    smeReviewAreas:['Security Architecture','Identity Management'],
+    migrationThemes:['Security modernization','Identity migration','Authorization design'],
+    migrationType:['Redesign Candidate'],
+    scope:'UserGroupCallback replaced by IdentityProvider, UserTaskAssignmentStrategy implemented, and OIDC and JWT claims wired into task assignment.',
+    why:'Identity moves from an application-implemented callback to a platform-provided provider, so this is an authorization design decision before it is a code change.',
+    questions:['Where does group membership truly live today?','Which claims can the identity provider be trusted to issue?','How are service accounts and system actors represented?','What happens when a claim is missing or a token has expired?'],
+    validation:'Test with a token per role plus a deliberately unauthorized token, asserting both the granted paths and the denied ones.'
+  },
+  {
+    n:12, title:'Database Integration and Async', folder:'tutorial-12-database-integration',
+    track:'Custom scenario', migrationComplexity:'High', caps:['database'],
+    focusAreas:['Database Integration','Async Processing','Configuration Conversion'],
+    automationCandidates:['Datasource Property Conversion','Schema Baseline Generation','Async Job Detection'],
+    smeReviewAreas:['Database Administration','Platform Operations'],
+    migrationThemes:['Database integration','Schema lifecycle','Async processing'],
+    migrationType:['Configuration Change'],
+    scope:'Database configuration moved from KIE Server properties to Quarkus datasources, Flyway added for schema lifecycle, and Jobs Service used for asynchronous work.',
+    why:'It converts operational assumptions — where schema comes from, how background work runs — into explicit application configuration.',
+    questions:['Who owns schema changes, and is Flyway acceptable to them?','Which work is genuinely asynchronous, and which is only deferred?','What happens to in-flight jobs during a deployment?','Are connection pools sized for the new runtime model?'],
+    validation:'Run schema migration against a copy of the real database, then drive async jobs through success, retry and failure while watching pool and queue behaviour.'
+  },
+  {
+    n:13, title:'Common Migration Issues', folder:'tutorial-13-common-issues',
+    track:'Common issues', migrationComplexity:'Medium', caps:[], baseline:true,
+    focusAreas:['Troubleshooting Readiness'],
+    automationCandidates:['Error Signature Matching','Known Issue Scan'],
+    smeReviewAreas:['Support Engagement','Release Management'],
+    migrationThemes:['Troubleshooting readiness','Escalation path'],
+    migrationType:['Cross-cutting Reference'],
+    scope:'A catalogue of frequently hit migration issues with solutions, workarounds, root causes and guidance on when to raise support.',
+    why:'It converts unknown failures into recognized ones, which is the difference between a blocked migration and a scheduled fix.',
+    questions:['Which of these issues has the team already hit?','Is the documented workaround acceptable in production?','What evidence must we capture before escalating?','Which issues should become a pre-migration check?'],
+    validation:'Reproduce each relevant issue in a minimal project, keep the failing example, and attach it to the support request or the internal decision record.'
+  },
+  {
+    n:14, title:'Case Management and IT Orders', folder:'tutorial-14-case-management-it-orders',
+    track:'Business Central sample', migrationComplexity:'High', caps:['caseManagement'],
+    focusAreas:['Case Management Redesign','Workflow Migration','Architecture Restructuring'],
+    automationCandidates:['Case Asset Inventory','Milestone and Stage Mapping','Ad-hoc Task Detection','Case File Data Mapping'],
+    smeReviewAreas:['Case Design Authority','Architecture Review','Business Process Owners'],
+    migrationThemes:['Case management redesign','Runtime feature parity','Data ownership'],
+    migrationType:['Redesign Candidate'],
+    scope:'The legacy IT Orders case sample migrated: case-oriented assets, stages and milestones, ad-hoc and optional tasks, case file data, and the work items behind them.',
+    why:'Case behaviour in v8 leaned on runtime features that a v9 application may need to express differently, so this is where a migration is most likely to become a design exercise.',
+    questions:['Which case behaviour is business-required, and which was tooling convenience?','How are ad-hoc and optional tasks started in the target design?','Where does case file data live, and who reads it outside the application?','Do case roles map to the same identities as task assignment?','Is a case still the right model for this workload in v9?'],
+    validation:'Walk one real case from creation to closure, exercising every optional task, stage transition and milestone, then reconcile the resulting case file against the v8 equivalent.'
+  }
+];
+
+/* Surfaces for the planning lens heatmap. band: g | y | r */
+const SURFACES = [
+  {name:'BPMN process definitions',            cap:'bpmn',           band:'g', verdict:'Mostly transferable',   t:[1,3]},
+  {name:'DMN decision models',                 cap:'dmn',            band:'g', verdict:'Mostly compatible',     t:[2]},
+  {name:'Decision test scenarios',             cap:'dmn',            band:'g', verdict:'Mostly transferable',   t:[2]},
+  {name:'Domain data concepts',                cap:'jpa',            band:'g', verdict:'Mostly transferable',   t:[9]},
+  {name:'Maven-based build model',             cap:'multiModule',    band:'g', verdict:'Mostly compatible',     t:[10]},
+  {name:'Java platform and API surface',       cap:null,             band:'y', verdict:'Configuration changes', t:[4]},
+  {name:'DRL rules and ruleflow groups',       cap:'drl',            band:'y', verdict:'Moderate refactoring',  t:[3,4]},
+  {name:'Event listener registration',         cap:'eventListeners', band:'y', verdict:'Review required',       t:[5]},
+  {name:'Task deadlines and escalation',       cap:'humanTasks',     band:'y', verdict:'Review required',       t:[7]},
+  {name:'Email notification handlers',         cap:'email',          band:'y', verdict:'Configuration changes', t:[8]},
+  {name:'JPA entities and namespaces',         cap:'jpa',            band:'y', verdict:'Configuration changes', t:[6,9]},
+  {name:'Datasource and server configuration', cap:'database',       band:'y', verdict:'Configuration changes', t:[12]},
+  {name:'Asynchronous job execution',          cap:'database',       band:'y', verdict:'Review required',       t:[12]},
+  {name:'Multi-module topology',               cap:'multiModule',    band:'y', verdict:'Moderate refactoring',  t:[10]},
+  {name:'Generated task forms',                cap:'humanTasks',     band:'r', verdict:'Pattern replacement',   t:[1]},
+  {name:'Identity and authorization model',    cap:'oidc',           band:'r', verdict:'Architecture review',   t:[11]},
+  {name:'Case management semantics',           cap:'caseManagement', band:'r', verdict:'Likely redesign',       t:[14]},
+  {name:'Unmatched or unsupported patterns',   cap:null,             band:'r', verdict:'Architecture review',   t:[13,4]}
+];
+
+const CARRY_FORWARD = [
+  'Process and decision intent — the modelled business logic itself',
+  'DMN decision tables and their test scenarios',
+  'Domain data concepts and the vocabulary around them',
+  'Maven as the build system, and Java as the language',
+  'BPMN and DMN as the modelling standards'
+];
+
+const GALLERY = [
+  {label:'Namespaces', from:'javax.persistence.*\njavax.validation.*', concern:'Namespace migration', to:'jakarta.persistence.*\njakarta.validation.*', watch:['Entity and validation annotations','Third-party libraries still on javax','Generated code and templates'], t:[4,6]},
+  {label:'Identity', from:'UserGroupCallback', concern:'Identity migration', to:'IdentityProvider\nUserTaskAssignmentStrategy', watch:['Source of truth for group membership','Claim to role mapping','Service and system accounts'], t:[11]},
+  {label:'Runtime configuration', from:'KIE Server properties', concern:'Configuration modernization', to:'Quarkus datasource\napplication.properties', watch:['Per-environment secrets','Schema ownership','Connection pool sizing'], t:[12,6]},
+  {label:'Extension points', from:'Legacy listener registration', concern:'API changes', to:'v9 listener registration', watch:['Event ordering assumptions','Audit record continuity','Listeners that can be retired'], t:[5]},
+  {label:'Persistence descriptor', from:'persistence.xml', concern:'Persistence configuration', to:'Hibernate ORM properties', watch:['Dialect and schema generation','Transaction boundaries','Long-running instance state'], t:[6,9]},
+  {label:'Rule authoring', from:'Guided decision tables\nruleflow-group', concern:'Authoring model change', to:'DRL and rule units', watch:['Activation order','Who authors rules after migration','Rules under source control'], t:[3,4]},
+  {label:'Case model', from:'Business Central case assets', concern:'Case model review', to:'v9 case design', watch:['Ad-hoc and optional tasks','Stages and milestones','Case file data ownership'], t:[14]},
+  {label:'Task UI', from:'Generated task forms', concern:'UI ownership shift', to:'Application-owned UI', watch:['Form logic and validation','Accessibility requirements','Who builds and maintains screens'], t:[1]}
+];
+
+const AUTOMATION_TRACKS = [
+  {name:'Asset Discovery',            desc:'Enumerate processes, decisions, rules, forms and case assets before anyone estimates anything.',            match:['Asset Inventory','Case Asset Inventory','Form Usage Detection','Test Scenario Discovery','DRL Inventory','Template Inventory']},
+  {name:'Dependency Analysis',        desc:'Map module, library and version relationships to find what blocks an incremental migration.',              match:['Dependency Analysis','BOM Alignment','Reactor Topology Mapping']},
+  {name:'Connector Detection',        desc:'Find the code that reaches outside the process: handlers, listeners and background jobs.',                  match:['Work Item Handler Discovery','Listener Discovery','Async Job Detection','Callback Implementation Discovery']},
+  {name:'Configuration Conversion',   desc:'Translate descriptors and server properties into application configuration for each environment.',         match:['Datasource Config Generation','Persistence Descriptor Conversion','Config Externalization','Config Conversion','Datasource Property Conversion','Schema Baseline Generation']},
+  {name:'Persistence Migration',      desc:'Rewrite entity annotations and check that persisted data still round-trips.',                              match:['Entity Annotation Rewrite','Entity Graph Analysis','Serialization Compatibility Scan']},
+  {name:'Security Migration',         desc:'Extract the current authorization model so the target one can be reviewed rather than guessed.',            match:['Callback Implementation Discovery','Role Mapping Extraction']},
+  {name:'Architecture Transformation',desc:'Propose target structures where the v8 shape has no direct v9 equivalent.',                                match:['Milestone and Stage Mapping','Ad-hoc Task Detection','Case File Data Mapping','Reactor Topology Mapping','Registration Rewrite','Guided Table Conversion']},
+  {name:'Code Modernization',         desc:'Apply the mechanical source changes that repeat across every module.',                                     match:['javax to jakarta Rewrite','Process ID Normalization','Rule Unit Detection','Ruleflow-group Detection','Deadline Config Extraction','Assignment Strategy Detection','DMN Version Scan']},
+  {name:'Diagnostics and Known Issues',desc:'Recognize failure signatures early so unknown blockers become scheduled fixes.',                          match:['Error Signature Matching','Known Issue Scan']}
+];
+
+const TRACKS = [
+  {name:'Migration Assessments',    status:'available', label:'Available',        text:'A structured surface-by-surface review of an application, using the tutorial catalogue and the upgrade guide as the checklist. Can be run today with what exists.'},
+  {name:'Migration Accelerators',   status:'exploring', label:'Exploring',        text:'Reusable assets — checklists, fixtures, reference projects — that shorten the repeated parts of a migration. Shape and ownership still open.'},
+  {name:'AI-Assisted Migration',    status:'roadmap',   label:'Roadmap discussion',text:'Where model-assisted work could genuinely help versus where it would add review burden. A discussion topic, nothing more.'},
+  {name:'Code Analysis',            status:'exploring', label:'Exploring',        text:'Static inspection of a v8 codebase to locate the patterns the upgrade guide describes, so discovery stops being manual reading.'},
+  {name:'Connector Transformation', status:'roadmap',   label:'Roadmap discussion',text:'Handlers, listeners and integration points are the most repetitive migration work and the most sensitive to get wrong. Open question.'},
+  {name:'Feedback Opportunities',   status:'feedback',  label:'Feedback requested',text:'Concrete migration patterns, blockers and desired outcomes from real applications. Use the workspace below to capture them in a comparable shape.'}
+];
+
+const JOURNEY = [
+  {stage:'Assess',      h:'Inventory the application', hub:'A surface checklist and the eleven questions that frame it', you:'The real inventory of code, dependencies and environments'},
+  {stage:'Understand',  h:'Compare the patterns',      hub:'Paired v8 and v9 examples for each migration pattern',       you:'Deciding which pattern fits your target design'},
+  {stage:'Plan',        h:'Scope the work',            hub:'Focus areas, SME reviews and automation candidates',         you:'Sequencing, staffing, dependencies and dates'},
+  {stage:'Remediate',   h:'Do the migration',          hub:'Worked examples and a known-issue catalogue',                you:'Application-specific code and architecture decisions'},
+  {stage:'Validate',    h:'Prove the outcome',         hub:'A validation strategy written per tutorial',                 you:'Test data, environments and sign-off'}
+];
+
+/* ==========================================================================
+   2 · STATE + HELPERS
+   ========================================================================== */
+const KEY = {plan:'bamoe9.plan', assess:'bamoe9.assess', profile:'bamoe9.profile', fb:'bamoe9.feedback', flags:'bamoe9.flags'};
+const load = (k, fb) => { try { const v = JSON.parse(localStorage.getItem(k)); return v === null ? fb : v; } catch(e){ return fb; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
+
+let plan = new Set(load(KEY.plan, []));
+let answers = load(KEY.assess, {});
+let feedback = load(KEY.fb, []);
+let flags = load(KEY.flags, {exported:false});
+
+const el = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const byN = n => TUTORIALS.find(t => t.n === n);
+const persistPlan = () => save(KEY.plan, [...plan]);
+
+let toastTimer;
+function toast(msg){
+  const t = el('toastbar'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+function download(name, obj){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+/* ---- derivations ---- */
+const scopedCaps = () => CAPS.filter(c => answers[c.key] === 'yes').map(c => c.key);
+const unsureCaps = () => CAPS.filter(c => answers[c.key] === 'unsure').map(c => c.key);
+const answeredCount = () => CAPS.filter(c => answers[c.key]).length;
+
+function recommended(){
+  const yes = scopedCaps();
+  return TUTORIALS.filter(t => t.baseline || t.caps.some(c => yes.includes(c))).map(t => t.n);
+}
+function worthConfirming(){
+  const uns = unsureCaps(); const rec = recommended();
+  return TUTORIALS.filter(t => !rec.includes(t.n) && t.caps.some(c => uns.includes(c))).map(t => t.n);
+}
+const planItems = () => [...plan].map(byN).filter(Boolean).sort((a,b) => a.n - b.n);
+function activeItems(){
+  if (plan.size) return planItems();
+  const rec = recommended();
+  return rec.length ? TUTORIALS.filter(t => rec.includes(t.n)) : [];
+}
+function aggregate(items, field){
+  const m = new Map();
+  items.forEach(t => (t[field] || []).forEach(v => m.set(v, (m.get(v) || 0) + 1)));
+  return [...m.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+function surfacesInScope(){
+  const yes = scopedCaps();
+  if (!yes.length) return SURFACES.slice();
+  return SURFACES.filter(s => s.cap === null || yes.includes(s.cap));
+}
+function bandCounts(list){
+  return {g:list.filter(s => s.band === 'g').length, y:list.filter(s => s.band === 'y').length, r:list.filter(s => s.band === 'r').length};
+}
+function trackSignal(track){
+  const items = activeItems();
+  const hits = items.filter(t => t.automationCandidates.some(c => track.match.includes(c)));
+  const candidates = [...new Set(items.flatMap(t => t.automationCandidates).filter(c => track.match.includes(c)))].sort();
+  return {level:Math.min(5, hits.length), tutorials:hits.map(t => t.n), candidates};
+}
+const WEIGHT = {Low:1, Medium:2, High:3};
+function planWeight(){ return planItems().reduce((a,t) => a + WEIGHT[t.migrationComplexity], 0); }
+function planSignalLabel(w){
+  if (!w) return ['—','Add tutorials to generate a signal.'];
+  if (w <= 6) return ['Contained','Few surfaces, mostly direct migration patterns. Expect a short discovery pass.'];
+  if (w <= 14) return ['Moderate','Several surfaces with configuration and refactoring work. Plan for parallel workstreams.'];
+  return ['Broad','Multiple high-complexity surfaces. Expect architecture decisions before implementation can be sequenced.'];
+}
+
+/* ==========================================================================
+   3 · NAVIGATION
+   ========================================================================== */
+const VIEWS = ['dashboard','assessment','tutorials','plan','lens','automation','workspace'];
+function go(view){
+  if (!VIEWS.includes(view)) view = 'dashboard';
+  VIEWS.forEach(v => el('view-' + v).classList.toggle('active', v === view));
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === view)));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+window.go = go;
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
+el('planPill').addEventListener('click', () => go('plan'));
+el('repoTop').href = REPO;
+el('repoFoot').href = REPO;
+
+/* ==========================================================================
+   4 · HERO DELTA GATE
+   ========================================================================== */
+const GATE = GALLERY.slice(0,5).map(g => ({from:g.from.split('\n')[0], to:g.to.split('\n')[0], concern:g.concern}));
+let gateAt = 0;
+el('gateTicks').innerHTML = GATE.map(() => '<i></i>').join('');
+function paintGate(){
+  const g = GATE[gateAt];
+  el('gateFrom').textContent = g.from;
+  el('gateTo').textContent = g.to;
+  el('gateConcern').textContent = g.concern;
+  el('gateIndex').textContent = pad(gateAt + 1) + ' / ' + pad(GATE.length);
+  [...el('gateTicks').children].forEach((i, ix) => i.classList.toggle('on', ix === gateAt));
+  ['gateFrom','gateTo','gateConcern'].forEach(id => {
+    const n = el(id); n.classList.remove('fade-swap'); void n.offsetWidth; n.classList.add('fade-swap');
+  });
+}
+paintGate();
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  setInterval(() => { gateAt = (gateAt + 1) % GATE.length; paintGate(); }, 3600);
+}
+
+/* ==========================================================================
+   5 · DASHBOARD
+   ========================================================================== */
+function renderStrip(){
+  const scoped = scopedCaps().length;
+  const inScope = surfacesInScope();
+  const bc = bandCounts(inScope);
+  const tracks = AUTOMATION_TRACKS.filter(t => trackSignal(t).level > 0).length;
+  const rows = [
+    {k:'Surfaces declared', v:scoped, t:'of 11', s:answeredCount() ? answeredCount() + ' of 11 questions answered' : 'Assessment not started', c:'blue'},
+    {k:'Tutorials in plan', v:plan.size, t:'of 14', s:plan.size ? 'Plan weight ' + planWeight() : 'Nothing added yet', c:'teal'},
+    {k:'Decision-level surfaces', v:bc.r, t:'of ' + inScope.length, s:'Redesign or architecture review', c:'red'},
+    {k:'Automation tracks with signal', v:tracks, t:'of ' + AUTOMATION_TRACKS.length, s:plan.size ? 'From your plan' : 'From assessment defaults', c:'purple'}
+  ];
+  el('readinessStrip').innerHTML = rows.map(r => `
+    <div class="strip-item">
+      <span class="k">${r.k}</span>
+      <span class="v ${r.c}">${r.v}<small> ${r.t}</small></span>
+      <span class="s">${esc(r.s)}</span>
+    </div>`).join('');
+}
+
+function renderPrimaryCards(){
+  const inScope = surfacesInScope();
+  const bc = bandCounts(inScope);
+  const total = inScope.length || 1;
+  const pct = n => Math.round(n / total * 100);
+  const attention = inScope.filter(s => s.band !== 'g');
+  const top = attention.slice().sort((a,b) => (a.band === 'r' ? 0 : 1) - (b.band === 'r' ? 0 : 1)).slice(0,4);
+  const items = activeItems();
+  const trackRows = AUTOMATION_TRACKS.map(t => ({t, sig:trackSignal(t)})).sort((a,b) => b.sig.level - a.sig.level).slice(0,4);
+  const candTotal = new Set(items.flatMap(t => t.automationCandidates)).size;
+  const focusTop = aggregate(planItems(), 'focusAreas').slice(0,3);
+
+  const cards = [
+    `<article class="pcard" style="--accent:var(--amber)">
+      <div class="pcard-head">
+        <div class="eyebrow dim">Question 01</div>
+        <h3 class="pcard-q">What changes?</h3>
+        <p class="pcard-sub">${attention.length} of ${inScope.length} surfaces in scope need review, configuration work or a design decision.</p>
+      </div>
+      <div class="pcard-viz">
+        <div class="bandbar"><span class="g" style="flex:${bc.g}"></span><span class="y" style="flex:${bc.y}"></span><span class="r" style="flex:${bc.r}"></span></div>
+        ${top.map(s => `<div class="kv"><span>${esc(s.name)}</span><span>${esc(s.verdict)}</span></div>`).join('')}
+      </div>
+      <div class="pcard-foot"><span>${scopedCaps().length ? 'Filtered to your declared scope' : 'Showing all ' + SURFACES.length + ' surfaces'}</span><button onclick="go('lens')">Planning lens →</button></div>
+    </article>`,
+
+    `<article class="pcard" style="--accent:var(--green)">
+      <div class="pcard-head">
+        <div class="eyebrow dim">Question 02</div>
+        <h3 class="pcard-q">What doesn't change?</h3>
+        <p class="pcard-sub">The modelled logic is the most portable asset you own. Structure and configuration around it is where the work sits.</p>
+      </div>
+      <div class="pcard-viz">
+        <div class="donut-wrap">
+          <div class="donut" style="--dg:${pct(bc.g)}%;--dy:${pct(bc.g + bc.y)}%" role="img" aria-label="${pct(bc.g)} percent of surfaces in scope are mostly transferable"></div>
+          <div><div class="donut-num">${pct(bc.g)}%</div><div class="pcard-sub">of surfaces in scope carry forward with little or no change</div></div>
+        </div>
+        <ul class="carry" style="margin-top:14px">${CARRY_FORWARD.slice(0,3).map(c => `<li><i>✓</i>${esc(c)}</li>`).join('')}</ul>
+      </div>
+      <div class="pcard-foot"><span>${bc.g} transferable surfaces</span><button onclick="go('lens')">See the full list →</button></div>
+    </article>`,
+
+    `<article class="pcard" style="--accent:var(--purple)">
+      <div class="pcard-head">
+        <div class="eyebrow dim">Question 03</div>
+        <h3 class="pcard-q">What can be automated?</h3>
+        <p class="pcard-sub">${candTotal} repeatable candidates across ${trackRows.filter(r => r.sig.level > 0).length} tracks with signal. Illustrative planning aids only.</p>
+      </div>
+      <div class="pcard-viz">
+        ${trackRows.map(r => `
+          <div class="trackline">
+            <div class="t"><span>${esc(r.t.name)}</span><em>${r.sig.level ? r.sig.candidates.length + ' cand.' : 'no signal'}</em></div>
+            <div class="meter">${[1,2,3,4,5].map(i => `<b class="${i <= r.sig.level ? 'on' : ''}"></b>`).join('')}</div>
+          </div>`).join('')}
+      </div>
+      <div class="pcard-foot"><span>${plan.size ? 'Based on your plan' : 'Based on assessment'}</span><button onclick="go('automation')">Automation dashboard →</button></div>
+    </article>`,
+
+    `<article class="pcard" style="--accent:var(--blue)">
+      <div class="pcard-head">
+        <div class="eyebrow dim">Question 04</div>
+        <h3 class="pcard-q">Build migration plan</h3>
+        <p class="pcard-sub">${plan.size ? planSignalLabel(planWeight())[0] + ' scope · weight ' + planWeight() : 'Three steps to a plan you can export and circulate.'}</p>
+      </div>
+      <div class="pcard-viz">
+        <div class="steps-mini">
+          <div class="smini ${answeredCount() ? 'done' : ''}"><i>${answeredCount() ? '✓' : '01'}</i><span>Declare your surfaces — ${answeredCount()} of 11 answered</span></div>
+          <div class="smini ${plan.size ? 'done' : ''}"><i>${plan.size ? '✓' : '02'}</i><span>Add the tutorials that apply — ${plan.size} selected</span></div>
+          <div class="smini ${flags.exported ? 'done' : ''}"><i>${flags.exported ? '✓' : '03'}</i><span>Export the profile as JSON</span></div>
+        </div>
+        ${focusTop.length ? `<div class="chips" style="margin-top:14px">${focusTop.map(f => `<span class="chip blue">${esc(f[0])} <b>${f[1]}</b></span>`).join('')}</div>` : ''}
+      </div>
+      <div class="pcard-foot"><span>${plan.size ? plan.size + ' tutorials' : 'Empty plan'}</span><button onclick="go('${answeredCount() ? 'plan' : 'assessment'}')">${answeredCount() ? 'Open plan builder →' : 'Start assessment →'}</button></div>
+    </article>`
+  ];
+  el('primaryCards').innerHTML = cards.join('');
+}
+
+function renderJourney(){
+  el('journeyRail').innerHTML = JOURNEY.map(j => `
+    <div class="rail-col">
+      <div class="st">${esc(j.stage)}</div>
+      <h4>${esc(j.h)}</h4>
+      <div class="row2" style="border-top:0;padding-top:0;margin-top:0"><em>This hub gives you</em>${esc(j.hub)}</div>
+      <div class="row2"><em>You still own</em>${esc(j.you)}</div>
+    </div>`).join('');
+  const done = (answeredCount() ? 1 : 0) + (plan.size ? 1 : 0) + (flags.exported ? 1 : 0);
+  el('railProg').style.width = Math.round(done / 3 * 100) + '%';
+  el('railProg').parentElement.title = done + ' of 3 planning steps complete';
+}
+
+/* ==========================================================================
+   6 · ASSESSMENT
+   ========================================================================== */
+function renderQuestions(){
+  el('questionGrid').innerHTML = CAPS.map(c => {
+    const a = answers[c.key] || '';
+    return `<div class="qcard ${a === 'yes' ? 'yes' : a === 'unsure' ? 'unsure' : ''}">
+      <div><div class="qt">${esc(c.q)}</div><div class="qs">${esc(c.s)}</div></div>
+      <div class="seg" role="group" aria-label="${esc(c.q)}">
+        ${['yes','no','unsure'].map(v => `<button type="button" aria-pressed="${a === v}" onclick="answer('${c.key}','${v}')">${v.toUpperCase()}</button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  const n = answeredCount();
+  el('assessCounter').textContent = n + ' / 11 answered';
+  el('assessBar').style.width = Math.round(n / CAPS.length * 100) + '%';
+  el('assessScope').textContent = scopedCaps().length + ' surfaces in scope';
+}
+function answer(key, val){
+  if (answers[key] === val) delete answers[key]; else answers[key] = val;
+  save(KEY.assess, answers);
+  renderAll();
+}
+window.answer = answer;
+
+function renderAssessResults(){
+  const rec = recommended();
+  const maybe = worthConfirming();
+  const box = el('assessResults');
+  if (!answeredCount()){
+    box.innerHTML = '<div class="result-empty">Answer the questions above and the recommendations appear here — tutorials, focus areas, SME reviews and automation opportunities.</div>';
+    el('addAllRecommended').disabled = true;
+    return;
+  }
+  el('addAllRecommended').disabled = false;
+  const items = TUTORIALS.filter(t => rec.includes(t.n));
+  const focus = aggregate(items, 'focusAreas');
+  const sme = aggregate(items, 'smeReviewAreas');
+  const auto = aggregate(items, 'automationCandidates');
+  const bc = bandCounts(surfacesInScope());
+  box.innerHTML = `
+    <div class="plan-layout">
+      <div class="panel">
+        <div class="panel-title"><h3>Recommended tutorials</h3><span class="eyebrow dim">${items.length} of 14</span></div>
+        ${items.map(t => `
+          <div class="plan-row">
+            <span class="tick">${plan.has(t.n) ? '✓' : '·'}</span>
+            <span class="nm">${pad(t.n)} · ${esc(t.title)}<em>${esc(t.folder)}</em></span>
+            <span class="badge ${t.baseline ? 'baseline' : t.migrationComplexity.toLowerCase()}"><i></i>${t.baseline ? 'Baseline' : t.migrationComplexity}</span>
+            <button class="btn btn-quiet btn-sm" onclick="togglePlan(${t.n})">${plan.has(t.n) ? 'In plan' : 'Add'}</button>
+          </div>`).join('')}
+        ${maybe.length ? `<div class="note" style="margin-top:16px"><strong>Worth confirming.</strong> You marked ${maybe.length === 1 ? 'a surface' : 'surfaces'} as unsure, which brings ${maybe.map(n => pad(n)).join(', ')} into question. Confirm before scoping: ${maybe.map(n => esc(byN(n).title)).join(', ')}.</div>` : ''}
+      </div>
+      <div>
+        <div class="agg"><h4>Surface bands in your scope</h4><p class="why">How the declared surfaces place on the planning lens.</p>
+          <div class="bandbar"><span class="g" style="flex:${bc.g}"></span><span class="y" style="flex:${bc.y}"></span><span class="r" style="flex:${bc.r}"></span></div>
+          <div class="kv"><span>Mostly transferable</span><span>${bc.g}</span></div>
+          <div class="kv"><span>Review or refactoring</span><span>${bc.y}</span></div>
+          <div class="kv"><span>Redesign or review</span><span>${bc.r}</span></div>
+        </div>
+        <div class="agg"><h4>Recommended focus areas</h4><div class="chips">${focus.map(f => `<span class="chip blue">${esc(f[0])} <b>${f[1]}</b></span>`).join('')}</div></div>
+        <div class="agg"><h4>Suggested SME reviews</h4><div class="chips">${sme.map(f => `<span class="chip teal">${esc(f[0])} <b>${f[1]}</b></span>`).join('')}</div></div>
+        <div class="agg"><h4>Automation opportunities</h4><div class="chips">${auto.slice(0,12).map(f => `<span class="chip purple">${esc(f[0])} <b>${f[1]}</b></span>`).join('')}</div></div>
+      </div>
+    </div>`;
+}
+el('assessAllYes').addEventListener('click', () => { CAPS.forEach(c => answers[c.key] = 'yes'); save(KEY.assess, answers); renderAll(); toast('All surfaces marked yes'); });
+el('assessClear').addEventListener('click', () => { answers = {}; save(KEY.assess, answers); renderAll(); toast('Answers cleared'); });
+el('addAllRecommended').addEventListener('click', () => {
+  const rec = recommended(); const before = plan.size;
+  rec.forEach(n => plan.add(n)); persistPlan(); renderAll();
+  toast((plan.size - before) + ' tutorials added to plan');
+  el('planPill').classList.add('pulse'); setTimeout(() => el('planPill').classList.remove('pulse'), 520);
+});
+
+/* ==========================================================================
+   7 · TUTORIAL CATALOG
+   ========================================================================== */
+const focusFilter = el('focusFilter'), typeFilter = el('typeFilter'), cxFilter = el('cxFilter');
+[...new Set(TUTORIALS.flatMap(t => t.focusAreas))].sort().forEach(f => focusFilter.add(new Option(f, f)));
+[...new Set(TUTORIALS.flatMap(t => t.migrationType))].sort().forEach(f => typeFilter.add(new Option(f, f)));
+TUTORIALS.forEach(t => el('fbTutorial').add(new Option(pad(t.n) + ' · ' + t.title, t.folder)));
+
+function filtered(){
+  const q = el('search').value.trim().toLowerCase();
+  const f = focusFilter.value, ty = typeFilter.value, cx = cxFilter.value;
+  const onlyRec = el('onlyRecommended').checked;
+  const rec = recommended();
+  return TUTORIALS.filter(t => {
+    const hay = [t.title, t.folder, t.scope, t.why, t.track, ...t.focusAreas, ...t.migrationThemes, ...t.smeReviewAreas, ...t.automationCandidates].join(' ').toLowerCase();
+    return (!q || hay.includes(q))
+      && (f === 'all' || t.focusAreas.includes(f))
+      && (ty === 'all' || t.migrationType.includes(ty))
+      && (cx === 'all' || t.migrationComplexity === cx)
+      && (!onlyRec || rec.includes(t.n));
+  });
+}
+function renderCatalog(){
+  const list = filtered();
+  el('countRow').textContent = list.length + ' SHOWN · ' + plan.size + ' IN PLAN';
+  el('tutorialGrid').innerHTML = list.length ? list.map(t => `
+    <article class="tcard ${plan.has(t.n) ? 'in-plan' : ''}">
+      <div class="tcard-top">
+        <span class="tcard-no">TUTORIAL ${pad(t.n)}</span>
+        <span class="badge ${t.migrationComplexity.toLowerCase()}"><i></i>${t.migrationComplexity}</span>
+      </div>
+      <div class="tcard-body">
+        <div>
+          <div class="track">${esc(t.track)}${t.baseline ? ' · baseline' : ''}</div>
+          <h3 style="margin-top:6px">${esc(t.title)}</h3>
+        </div>
+        <div class="path">${esc(t.folder)}</div>
+        <p class="scope">${esc(t.scope)}</p>
+        <div class="chips" style="margin-top:auto">${t.focusAreas.map(f => `<span class="chip">${esc(f)}</span>`).join('')}<span class="chip">${esc(t.migrationType[0])}</span></div>
+      </div>
+      <div class="tcard-actions">
+        <button onclick="openDetail(${t.n})">Details</button>
+        <button class="add ${plan.has(t.n) ? 'on' : ''}" onclick="togglePlan(${t.n})">${plan.has(t.n) ? 'In plan ✓' : 'Add to plan'}</button>
+      </div>
+      <div class="tcard-actions" style="grid-template-columns:1fr">
+        <a href="${REPO + t.folder}" target="_blank" rel="noopener">Open in repository ↗</a>
+      </div>
+    </article>`).join('') : '<div class="empty">No tutorials match those filters. Widen the search or reset.</div>';
+}
+function togglePlan(n){
+  if (plan.has(n)) { plan.delete(n); toast('Tutorial ' + pad(n) + ' removed from plan'); }
+  else { plan.add(n); toast('Tutorial ' + pad(n) + ' added to plan'); el('planPill').classList.add('pulse'); setTimeout(() => el('planPill').classList.remove('pulse'), 520); }
+  persistPlan(); renderAll();
+}
+window.togglePlan = togglePlan;
+['search','focusFilter','typeFilter','cxFilter','onlyRecommended'].forEach(id =>
+  el(id).addEventListener(id === 'search' ? 'input' : 'change', renderCatalog));
+el('resetFilters').addEventListener('click', () => {
+  el('search').value = ''; focusFilter.value = 'all'; typeFilter.value = 'all'; cxFilter.value = 'all'; el('onlyRecommended').checked = false;
+  renderCatalog();
+});
+
+/* ==========================================================================
+   8 · PLAN BUILDER
+   ========================================================================== */
+el('profileName').value = load(KEY.profile, '');
+el('profileName').addEventListener('input', e => { save(KEY.profile, e.target.value); renderPlanJson(); });
+
+function planPayload(){
+  const items = planItems();
+  return {
+    profile: el('profileName').value || 'Unnamed application',
+    generatedAt: new Date().toISOString(),
+    source: 'BAMOE 8 to 9 Migration Readiness Hub — client-side planning aid, not IBM guidance',
+    selectedTutorials: items.map(t => t.folder),
+    focusAreas: aggregate(items, 'focusAreas').map(x => x[0]),
+    smeReviewAreas: aggregate(items, 'smeReviewAreas').map(x => x[0]),
+    automationCandidates: aggregate(items, 'automationCandidates').map(x => x[0]),
+    migrationThemes: aggregate(items, 'migrationThemes').map(x => x[0]),
+    migrationTypes: aggregate(items, 'migrationType').map(x => x[0]),
+    complexityMix: {
+      low: items.filter(t => t.migrationComplexity === 'Low').length,
+      medium: items.filter(t => t.migrationComplexity === 'Medium').length,
+      high: items.filter(t => t.migrationComplexity === 'High').length
+    },
+    planningWeight: planWeight(),
+    planningSignal: planSignalLabel(planWeight())[0],
+    assessment: {
+      answers: CAPS.reduce((a, c) => { a[c.key] = answers[c.key] || 'unanswered'; return a; }, {}),
+      surfacesInScope: scopedCaps(),
+      recommendedTutorials: TUTORIALS.filter(t => recommended().includes(t.n)).map(t => t.folder)
+    },
+    disclaimer: 'Complexity bands, focus areas, SME review areas and automation candidates are planning hypotheses derived from tutorial metadata. Validate against the application source, dependencies, architecture and supported release.'
+  };
+}
+function renderPlanJson(){ el('planJson').textContent = JSON.stringify(planPayload(), null, 2); }
+
+function renderPlan(){
+  const items = planItems();
+  el('planPillCount').textContent = plan.size;
+  el('planCountLabel').textContent = plan.size + ' selected';
+  el('planList').innerHTML = items.length ? items.map(t => `
+    <div class="plan-row">
+      <span class="tick">✓</span>
+      <span class="nm">Tutorial ${pad(t.n)} · ${esc(t.title)}<em>${esc(t.folder)}</em></span>
+      <span class="badge ${t.migrationComplexity.toLowerCase()}"><i></i>${t.migrationComplexity}</span>
+      <button class="rm" title="Remove from plan" aria-label="Remove tutorial ${pad(t.n)}" onclick="togglePlan(${t.n})">×</button>
+    </div>`).join('')
+    : `<div class="result-empty">No tutorials yet. Run the <button class="btn btn-quiet btn-sm" onclick="go('assessment')">assessment</button> or browse the <button class="btn btn-quiet btn-sm" onclick="go('tutorials')">catalog</button>.</div>`;
+
+  const mix = {l:items.filter(t => t.migrationComplexity === 'Low').length, m:items.filter(t => t.migrationComplexity === 'Medium').length, h:items.filter(t => t.migrationComplexity === 'High').length};
+  el('planMix').innerHTML = items.length
+    ? ['l','m','h'].map(k => mix[k] ? `<span class="${k}" style="flex:${mix[k]}">${mix[k]} ${k === 'l' ? 'LOW' : k === 'm' ? 'MED' : 'HIGH'}</span>` : '').join('')
+    : '<span style="flex:1;background:var(--layer-3);color:var(--ink-3)">—</span>';
+  const w = planWeight(); const sig = planSignalLabel(w);
+  el('planWeightNum').textContent = w || '0';
+  el('planSignal').innerHTML = items.length ? '<b style="color:var(--ink);font-weight:600">' + sig[0] + '</b> — ' + sig[1] : sig[1];
+
+  const paint = (id, field, cls) => {
+    const agg = aggregate(items, field);
+    el(id).innerHTML = agg.length ? agg.map(x => `<span class="chip ${cls}">${esc(x[0])} <b>${x[1]}</b></span>`).join('') : '<span class="chip">Nothing yet</span>';
+  };
+  paint('planFocus', 'focusAreas', 'blue');
+  paint('planSme', 'smeReviewAreas', 'teal');
+  paint('planAuto', 'automationCandidates', 'purple');
+  paint('planThemes', 'migrationThemes', 'magenta');
+  renderPlanJson();
+}
+el('exportPlan').addEventListener('click', () => {
+  if (!plan.size) { toast('Add at least one tutorial first'); return; }
+  const p = planPayload();
+  download('bamoe-migration-plan-' + (p.profile.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'profile') + '.json', p);
+  flags.exported = true; save(KEY.flags, flags); renderAll();
+  toast('Migration plan exported');
+});
+el('copyPlan').addEventListener('click', async () => {
+  const text = JSON.stringify(planPayload(), null, 2);
+  try { await navigator.clipboard.writeText(text); toast('Plan JSON copied'); }
+  catch(e){ const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); toast('Plan JSON copied'); }
+});
+el('clearPlan').addEventListener('click', () => {
+  if (!plan.size) { toast('Plan is already empty'); return; }
+  plan.clear(); persistPlan(); renderAll(); toast('Plan cleared');
+});
+
+/* ==========================================================================
+   9 · PLANNING LENS — HEATMAP
+   ========================================================================== */
+const BAND_HEAD = [
+  {k:'g', label:'Mostly transferable'},
+  {k:'y', label:'Review / configuration / refactor'},
+  {k:'r', label:'Redesign / architecture review'}
+];
+function renderHeatmap(){
+  const yes = scopedCaps();
+  const only = el('onlyScoped').checked;
+  const rows = SURFACES.filter(s => !only || s.cap === null || yes.includes(s.cap));
+  el('heatmap').innerHTML = `
+    <div class="hm-row head">
+      <div class="hm-cell">Migration surface</div>
+      ${BAND_HEAD.map(b => `<div class="hm-cell ${b.k}">${b.label}</div>`).join('')}
+    </div>
+    ${rows.map(s => {
+      const inScope = s.cap === null || yes.includes(s.cap);
+      const dim = yes.length && !inScope;
+      return `<div class="hm-row ${dim ? 'off' : ''}">
+        <div class="hm-cell hm-surface">
+          <span class="nm">${esc(s.name)}</span>
+          ${inScope && yes.length ? '<span class="scopeflag">IN YOUR SCOPE</span>' : ''}
+          <span class="rel">${s.t.map(n => `<button onclick="openDetail(${n})" title="${esc(byN(n).title)}">T${pad(n)}</button>`).join('')}</span>
+        </div>
+        ${BAND_HEAD.map(b => `<div class="hm-cell band ${b.k} ${s.band === b.k ? 'on' : ''}">${s.band === b.k ? esc(s.verdict) : '<span aria-hidden="true">·</span>'}</div>`).join('')}
+      </div>`;
+    }).join('')}`;
+  const bc = bandCounts(rows);
+  el('lensBar').innerHTML = `<span class="g" style="flex:${bc.g}"></span><span class="y" style="flex:${bc.y}"></span><span class="r" style="flex:${bc.r}"></span>`;
+  el('lensCounts').innerHTML = `
+    <div class="kv"><span>Mostly transferable or compatible</span><span>${bc.g} surfaces</span></div>
+    <div class="kv"><span>Review, configuration or refactoring</span><span>${bc.y} surfaces</span></div>
+    <div class="kv"><span>Redesign, review or replacement</span><span>${bc.r} surfaces</span></div>
+    <div class="kv"><span>Total shown</span><span>${rows.length} of ${SURFACES.length}</span></div>`;
+}
+el('onlyScoped').addEventListener('change', renderHeatmap);
+
+/* ==========================================================================
+   10 · MODERNIZATION GALLERY
+   ========================================================================== */
+el('gallery').innerHTML = GALLERY.map(g => `
+  <article class="gcard">
+    <div class="gcard-head"><span class="lbl">${esc(g.label)}</span><span class="lbl">${g.t.map(n => 'T' + pad(n)).join(' · ')}</span></div>
+    <div class="flow">
+      <div class="flow-node v8"><span class="n-lbl">BAMOE 8</span><span class="n-val">${esc(g.from).replace(/\n/g,'<br>')}</span></div>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
+      <div class="flow-node mid"><span class="n-lbl">Migration concern</span><span class="n-val">${esc(g.concern)}</span></div>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
+      <div class="flow-node v9"><span class="n-lbl">BAMOE 9</span><span class="n-val">${esc(g.to).replace(/\n/g,'<br>')}</span></div>
+    </div>
+    <div class="gcard-foot">
+      <span class="wf">Watch for</span>
+      <div class="chips">${g.watch.map(w => `<span class="chip">${esc(w)}</span>`).join('')}</div>
+      <div class="btn-row" style="margin-top:4px">${g.t.map(n => `<button class="btn btn-quiet btn-sm" onclick="openDetail(${n})">Tutorial ${pad(n)} details</button>`).join('')}</div>
+    </div>
+  </article>`).join('');
+
+/* ==========================================================================
+   11 · AUTOMATION DASHBOARD
+   ========================================================================== */
+function renderAutomation(){
+  const basis = plan.size ? 'plan' : (recommended().length ? 'assessment' : 'none');
+  el('autoGrid').innerHTML = AUTOMATION_TRACKS.map(tr => {
+    const sig = trackSignal(tr);
+    const label = sig.level === 0 ? 'No signal' : sig.level === 1 ? 'Single source' : sig.level <= 3 ? 'Recurring' : 'Strongly recurring';
+    return `<article class="acard ${sig.level ? '' : 'cold'}">
+      <div class="acard-top">
+        <div><h4>${esc(tr.name)}</h4><p class="desc" style="margin-top:6px">${esc(tr.desc)}</p></div>
+        <span class="badge">${sig.tutorials.length} tut.</span>
+      </div>
+      <div class="sig">
+        <span class="bars" role="img" aria-label="Signal level ${sig.level} of 5">${[1,2,3,4,5].map(i => `<b class="${i <= sig.level ? 'on' : ''}"></b>`).join('')}</span>
+        <span class="txt">${label}</span>
+      </div>
+      <div class="chips">${sig.candidates.length ? sig.candidates.map(c => `<span class="chip purple">${esc(c)}</span>`).join('') : '<span class="chip">Not indicated by ' + (basis === 'none' ? 'any input yet' : 'your ' + basis) + '</span>'}</div>
+      ${sig.tutorials.length ? `<div class="btn-row">${sig.tutorials.map(n => `<button class="btn btn-quiet btn-sm" onclick="openDetail(${n})">T${pad(n)}</button>`).join('')}</div>` : ''}
+    </article>`;
+  }).join('');
+}
+
+/* ==========================================================================
+   12 · WORKSPACE — TRACKS + FEEDBACK
+   ========================================================================== */
+el('trackGrid').innerHTML = TRACKS.map(t => `
+  <article class="trk">
+    <span class="st-badge st-${t.status}">${esc(t.label)}</span>
+    <h4>${esc(t.name)}</h4>
+    <p>${esc(t.text)}</p>
+  </article>`).join('');
+
+function renderFeedback(){
+  el('fbCount').textContent = feedback.length + (feedback.length === 1 ? ' ENTRY' : ' ENTRIES');
+  el('fbList').innerHTML = feedback.length ? feedback.map((f, i) => `
+    <article class="fb-entry">
+      <div class="eh"><strong>${esc(f.migrationPattern)}</strong><button class="rm btn btn-quiet btn-sm" onclick="removeFeedback(${i})">Remove</button></div>
+      <dl>
+        <div><dt>Current blocker</dt><dd>${esc(f.currentBlocker)}</dd></div>
+        <div><dt>Desired outcome</dt><dd>${esc(f.desiredOutcome)}</dd></div>
+        ${f.potentialAutomationOpportunity ? `<div><dt>Potential automation opportunity</dt><dd>${esc(f.potentialAutomationOpportunity)}</dd></div>` : ''}
+        ${f.businessImpact ? `<div><dt>Business impact</dt><dd>${esc(f.businessImpact)}</dd></div>` : ''}
+        ${f.relatedTutorial ? `<div><dt>Related tutorial</dt><dd class="mono" style="font-size:11.5px">${esc(f.relatedTutorial)}</dd></div>` : ''}
+      </dl>
+    </article>`).join('') : '<div class="result-empty">No entries yet. Capture one migration pattern per entry so they can be compared across applications.</div>';
+}
+el('feedbackForm').addEventListener('submit', e => {
+  e.preventDefault();
+  feedback.push({
+    migrationPattern: el('fbPattern').value.trim(),
+    currentBlocker: el('fbBlocker').value.trim(),
+    desiredOutcome: el('fbOutcome').value.trim(),
+    potentialAutomationOpportunity: el('fbAuto').value.trim(),
+    businessImpact: el('fbImpact').value.trim(),
+    relatedTutorial: el('fbTutorial').value,
+    capturedAt: new Date().toISOString()
+  });
+  save(KEY.fb, feedback);
+  el('feedbackForm').reset();
+  renderFeedback();
+  toast('Feedback entry added');
+});
+function removeFeedback(i){ feedback.splice(i,1); save(KEY.fb, feedback); renderFeedback(); toast('Entry removed'); }
+window.removeFeedback = removeFeedback;
+el('exportFeedback').addEventListener('click', () => {
+  if (!feedback.length) { toast('Add an entry first'); return; }
+  download('bamoe-migration-feedback.json', {
+    profile: el('profileName').value || 'Unnamed application',
+    generatedAt: new Date().toISOString(),
+    source: 'BAMOE 8 to 9 Migration Readiness Hub — structured migration feedback',
+    entryCount: feedback.length,
+    entries: feedback
+  });
+  toast('Feedback exported');
+});
+el('clearFeedback').addEventListener('click', () => {
+  if (!feedback.length) { toast('Nothing to clear'); return; }
+  feedback = []; save(KEY.fb, feedback); renderFeedback(); toast('Entries cleared');
+});
+
+/* ==========================================================================
+   13 · TUTORIAL DETAIL MODAL
+   ========================================================================== */
+const dlg = el('detail');
+let modalN = null;
+function openDetail(n){
+  const t = byN(n); if (!t) return;
+  modalN = n;
+  el('mEyebrow').textContent = 'Tutorial ' + pad(t.n) + ' · ' + t.track + ' · ' + t.migrationComplexity + ' complexity';
+  el('mTitle').textContent = t.title;
+  el('mPath').textContent = t.folder;
+  el('mBody').innerHTML = `
+    <div class="m-block"><h4>Scope</h4><p>${esc(t.scope)}</p></div>
+    <div class="m-block"><h4>Why it matters</h4><p>${esc(t.why)}</p></div>
+    <div class="m-block"><h4>Typical migration questions</h4><ul>${t.questions.map(q => `<li>${esc(q)}</li>`).join('')}</ul></div>
+    <div class="m-block"><h4>Validation strategy</h4><p>${esc(t.validation)}</p></div>
+    <div class="m-cols">
+      <div class="m-block"><h4>Potential automation opportunities</h4><div class="chips">${t.automationCandidates.map(c => `<span class="chip purple">${esc(c)}</span>`).join('')}</div></div>
+      <div class="m-block"><h4>Suggested SME review areas</h4><div class="chips">${t.smeReviewAreas.map(c => `<span class="chip teal">${esc(c)}</span>`).join('')}</div></div>
+    </div>
+    <div class="m-cols">
+      <div class="m-block"><h4>Focus areas</h4><div class="chips">${t.focusAreas.map(c => `<span class="chip blue">${esc(c)}</span>`).join('')}</div></div>
+      <div class="m-block"><h4>Migration themes</h4><div class="chips">${t.migrationThemes.map(c => `<span class="chip magenta">${esc(c)}</span>`).join('')}</div></div>
+    </div>
+    <div class="m-block"><h4>Migration type</h4><div class="chips">${t.migrationType.map(c => `<span class="chip">${esc(c)}</span>`).join('')}${t.baseline ? '<span class="badge baseline"><i></i>Baseline for every migration</span>' : ''}</div></div>`;
+  el('mLink').href = REPO + t.folder;
+  updateModalAdd();
+  if (!dlg.open) dlg.showModal();
+}
+window.openDetail = openDetail;
+function updateModalAdd(){
+  if (modalN === null) return;
+  el('mAdd').textContent = plan.has(modalN) ? 'Remove from migration plan' : 'Add to migration plan';
+}
+el('mAdd').addEventListener('click', () => { if (modalN !== null) togglePlan(modalN); });
+el('mClose').addEventListener('click', () => dlg.close());
+dlg.addEventListener('click', e => { const r = dlg.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dlg.close(); });
+dlg.addEventListener('close', () => { modalN = null; });
+
+/* ==========================================================================
+   14 · RENDER LOOP + INIT
+   ========================================================================== */
+function renderAll(){
+  renderStrip();
+  renderPrimaryCards();
+  renderJourney();
+  renderQuestions();
+  renderAssessResults();
+  renderCatalog();
+  renderPlan();
+  renderHeatmap();
+  renderAutomation();
+  updateModalAdd();
+}
+renderFeedback();
+renderAll();
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && dlg.open) dlg.close();
+  if (e.altKey && !e.ctrlKey && !e.metaKey){
+    const map = {'1':'dashboard','2':'assessment','3':'tutorials','4':'plan','5':'lens','6':'automation','7':'workspace'};
+    if (map[e.key]) { e.preventDefault(); go(map[e.key]); }
+  }
+});
+</script>
+</body>
+</html>
